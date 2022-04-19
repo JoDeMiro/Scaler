@@ -11,6 +11,7 @@ import sys,os
 
 print('---------------------------------------')
 print('                SETUP                  ')
+lb = '193.225.250.30'
 usr='ubuntu'
 nonce='9673ead7-7655-47fa-9c32-2cbaab8cd7b9'
 rt_limit_upper = 2000
@@ -58,6 +59,16 @@ def main():
 	N=0           # number of requests arrived in cts
 	print(N)
 
+
+	# Most itt tartok
+	timesSuggested=0
+	workerStatus=workerInit()       # keeps track of which workers are up and running -> dict
+	print('workerStatus = ')
+	print(workerStatus.values())
+	w=sum(workerStatus.values())    # number of acitve workers
+	print('Active workers = ', w)
+	# ------------------------------
+
 	for	line in loglines: # follow the apache accesslog file
 		# print('---------------------------------------')
 		# print('                    FOR                ')
@@ -83,10 +94,10 @@ def main():
 					avgrt=rt
 					rr=N                 # request rate 
 					p_95=numpy.percentile(RTs,95) # calculate percentile
-					print('--------------------------------')
-					print(len(RTs))
-					print(RTs)
-					print('--------------------------------')
+					# print('--------------------------------')
+					# print('len(RTs) = ', len(RTs))
+					# print(RTs)
+					# print('--------------------------------')
 					print("====== Average RT for ten second interval %s is %f, 95th percentile is: %f and RC is %d ======"%(cts,rt,p_95,rr))
 					cts=ts # update the interval to current timestamp
 					RT=float(matches.group(2))/1000. # reinitialize RT, N , RTs variables for next interval
@@ -115,5 +126,32 @@ def main():
 			exc_type, exc_obj, exc_tb = sys.exc_info()
 			fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 			print(exc_type, fname, exc_tb.tb_lineno)
+
+
+
+
+def workerInit():
+	d={}
+	cmd= " curl -s http://%s/balancer-manager | grep 'Init' "%(lb)
+	allW=subprocess.check_output(cmd,shell=True,universal_newlines=True).splitlines()
+	workercmd=" curl -s http://%s/balancer-manager | grep 'Init Ok' "%(lb)
+	working = subprocess.check_output(workercmd,shell=True).splitlines()
+	print('---------------------------------------')
+	print(allW)
+	print('---------------------------------------')
+	print(working)
+	print('---------------------------------------')
+	for line in allW:
+		workerIP=re.search('.*http:\/\/([0-9]*.[0-9]*.[0-9]*.[0-9]*).*',line).group(1)
+		d[workerIP]=False
+	for line in working:
+		workerIP=re.search('.*http:\/\/([0-9]*.[0-9]*.[0-9]*.[0-9]*).*',line).group(1)
+		d[workerIP]=True
+	print('---------------------------------------')
+	print(d)
+	print('---------------------------------------')
+	return d
+
+
 
 main()
