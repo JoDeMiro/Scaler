@@ -47,9 +47,9 @@ def main():
 	print(N)
 
 	for	line in loglines: # follow the apache accesslog file
-		print('---------------------------------------')
-		print('                    FOR                ')
-		print('---------------------------------------')
+		# print('---------------------------------------')
+		# print('                    FOR                ')
+		# print('---------------------------------------')
 		try:
 			if first: # if script just started, initialize the necessary variables 
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
@@ -58,8 +58,9 @@ def main():
 				RTs.append(RT)
 				N=1
 				first=False
+				print('This was the first attempt')
 			else:
-				print(line)
+				# print(line)
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
 				ts=matches.group(1) # extract the time stamp of request
 				if cts==ts: # if the timestamp is same, not changed then keep incrementing the variables
