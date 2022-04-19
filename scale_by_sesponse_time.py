@@ -40,22 +40,22 @@ def main():
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
 	# Ebbe fogom írni a metikákat
-	metriclog=open('./metric.log.cputhresh%i%i'%(rt_limit_lower,rt_limit_upper),'wb')
+	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'wb')
 	mlog=csv.writer(metriclog)
 
-
+	# Ebbe vajon mi kerül
+	scalelog=open('./logs/scale.log.rt_threshold%i%i'%(rt_limit_lower,rt_limit_upper),'w')
 
 	loglines=follow(accesslog)
-	print('fuk')
-	first=True # hack to check if the script was just started
+	first=True    # hack to check if the script was just started
 	print(first)
-	cts=-1 # time-stamp we are looking to calculate response time for
+	cts=-1        # time-stamp we are looking to calculate response time for
 	print(cts)
-	RT=0 # RT keeps the total of response time
+	RT=0          # RT keeps the total of response time
 	print(RT)
-	RTs=[] # array to keep individual RT observations
+	RTs=[]        # array to keep individual RT observations
 	print(RTs)
-	N=0 # number of requests arrived in cts
+	N=0           # number of requests arrived in cts
 	print(N)
 
 	for	line in loglines: # follow the apache accesslog file
@@ -72,7 +72,6 @@ def main():
 				first=False
 				print('This was the first attempt')
 			else:
-				# print(line)
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
 				ts=matches.group(1) # extract the time stamp of request
 				if cts==ts: # if the timestamp is same, not changed then keep incrementing the variables
@@ -80,9 +79,9 @@ def main():
 					RT+=float(matches.group(2))/1000. # add to sum for mean
 					N+=1 
 				elif cts<ts or (ts[0:7]=="00:00:0" and cts[0:7]=="23:59:5"): # case when the new request timestamp has changed -> interval passed
-					rt=float(RT/N) # calculate averate rt
+					rt=float(RT/N)       # calculate average rt
 					avgrt=rt
-					rr=N # request rate 
+					rr=N                 # request rate 
 					p_95=numpy.percentile(RTs,95) # calculate percentile
 					print("====== Average RT for ten second interval %s is %f, 95th percentile is: %f and RC is %d ======"%(cts,rt,p_95,rr))
 					cts=ts # update the interval to current timestamp
@@ -90,8 +89,19 @@ def main():
 					N=1
 					RTs=[RT]
 				
-				# Meg van a válaszidő
-				# Most ez alapján kéne skálázni
+				# The measured values are the follow
+				# rr    = Request Rate
+				# rt    = Response Time
+				# avgrt = Average Response Time
+				# p_95  = Average Response Time for 95%
+				# cts   = Current Time Stamp
+
+				print('rr    = ', rr)
+				print('rt    = ', rt)
+				print('p_95  = ', p_95)
+				print('avgrt = ', avgrt)
+				print('cts   = ', cts)
+				print()
 
 					
 		except Exception as e:
