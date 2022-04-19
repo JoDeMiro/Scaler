@@ -43,8 +43,8 @@ def main():
 	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'wb')
 	mlog=csv.writer(metriclog)
 
-	# Ebbe vajon mi kerül
-	scalelog=open('./logs/scale.log.rt_threshold%i%i'%(rt_limit_lower,rt_limit_upper),'w')
+	# Ebbe fogom tenni a skálázási adatokat
+	scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
 
 	loglines=follow(accesslog)
 	first=True    # hack to check if the script was just started
