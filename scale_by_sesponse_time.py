@@ -40,7 +40,7 @@ def main():
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
 	# Ebbe fogom írni a metikákat
-	metriclog=open('./metric.log.cputhresh%i'%(rt_limit_lower,rt_limit_upper),'wb')
+	metriclog=open('./metric.log.cputhresh%i%i'%(rt_limit_lower,rt_limit_upper),'wb')
 	mlog=csv.writer(metriclog)
 
 
