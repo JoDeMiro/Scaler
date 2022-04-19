@@ -83,6 +83,10 @@ def main():
 					avgrt=rt
 					rr=N                 # request rate 
 					p_95=numpy.percentile(RTs,95) # calculate percentile
+					print('--------------------------------')
+					print(len(RTs))
+					print(RTs)
+					print('--------------------------------')
 					print("====== Average RT for ten second interval %s is %f, 95th percentile is: %f and RC is %d ======"%(cts,rt,p_95,rr))
 					cts=ts # update the interval to current timestamp
 					RT=float(matches.group(2))/1000. # reinitialize RT, N , RTs variables for next interval
