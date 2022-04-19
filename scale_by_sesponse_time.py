@@ -101,7 +101,9 @@ def main():
 					print('p_95  = ', p_95)
 					print('avgrt = ', avgrt)
 					print('cts   = ', cts)
-					print()
+					print('len(RTs)', len(RTs))
+					print('tpye(RTs)', type(RTs))
+					print('RTs', RTs)
 
 					
 		except Exception as e:
