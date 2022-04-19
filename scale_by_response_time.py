@@ -16,6 +16,8 @@ usr='ubuntu'
 nonce='9673ead7-7655-47fa-9c32-2cbaab8cd7b9'
 rt_limit_upper = 2000
 rt_limit_lower = 100
+cpu_limit_upper = 70
+cpu_limit_lower = 40
 print('---------------------------------------')
 
 
@@ -37,14 +39,14 @@ def main():
 	print('---------------------------------------')
 	print('                  MAIN                 ')
 	print('---------------------------------------')
-	# EbbĹ‘l olvasom ki a response timot
+	# Ebbol olvasom ki a response timot
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
-	# Ebbe fogom Ă­rni a metikĂˇkat
-	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'wb')
+	# Ebbe fogom irni a metikakat
+	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
 	mlog=csv.writer(metriclog)
 
-	# Ebbe fogom tenni a skĂˇlĂˇzĂˇsi adatokat
+	# Ebbe fogom tenni a skalazasi adatokat
 	scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
 
 	loglines=follow(accesslog)
@@ -240,6 +242,55 @@ def main():
 					# Ki van olvasva a metrika es ki van olvasva az RT a response time.
 
 					# Most el lehet donteni, hogy melyik alapjan akarunk skalazni.
+
+					_cpu_user  = float(statavg_all_short.split()[0])
+					_cpu_idle  = float(statavg_all_short.split()[1])
+					_cpu_total = float(statavg_all_short.split()[2])
+
+
+					k = 0
+					if( _cpu_total > cpu_limit_upper ): # if _cpu_total is greater than the upper limit, consider scaling out
+						print('---------------------------------------')
+						print('         Testing for scale out         ')
+						print('---------------------------------------')
+
+						k+=1
+
+
+
+					if( _cpu_total < cpu_limit_lower and w > 1): # if _cpu_total is less than lower limit, consider scaling in
+						print('---------------------------------------')
+						print('         Testing for scale in          ')
+						print('---------------------------------------')
+
+						k-=1
+
+					# Log to file
+					rt = avgrt 						# average Response Time for last interval
+					print('rt \t= ', rt)
+					statarr=[float(i) for i in statavg_all_short.split()] 	# all the stats from collectl
+					print('statarr = ', statarr)
+					carr=[rr/10]+statarr 					# calculated per second request rate since 10 second interval
+					print('---------------------------------------')
+					print('         Write Log metric file         ')
+					print('---------------------------------------')
+
+					print('carr \t= ', carr)
+					print(ts, p_95, rt, w)
+
+					# mlog az mlog = csv.writer(metriclog)
+
+					mlog.writerow([ts, p_95, rt, w]+carr) 			# add the timestamp, 95th percentile, avg rt, and number of workers to stats and log
+					# metriclog az egy open context manager
+					metriclog.flush()
+
+					print('_______________________________________________________')
+
+
+					# Ok Log file is ki van irva benne van minden amit akarok
+					# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
+
+
 
 
 					
