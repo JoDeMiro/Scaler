@@ -13,7 +13,8 @@ print('---------------------------------------')
 print('                SETUP                  ')
 usr='ubuntu'
 nonce='9673ead7-7655-47fa-9c32-2cbaab8cd7b9'
-rt_limit = 2000
+rt_limit_upper = 2000
+rt_limit_lower = 100
 print('---------------------------------------')
 
 
@@ -39,7 +40,7 @@ def main():
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
 	# Ebbe fogom írni a metikákat
-	metriclog=open('./metric.log.cputhresh%i%i'%(lower,upper),'wb')
+	metriclog=open('./metric.log.cputhresh%i'%(rt_limit_lower,rt_limit_upper),'wb')
 	mlog=csv.writer(metriclog)
 
 
