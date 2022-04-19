@@ -89,19 +89,19 @@ def main():
 					N=1
 					RTs=[RT]
 				
-				# The measured values are the follow
-				# rr    = Request Rate
-				# rt    = Response Time
-				# avgrt = Average Response Time
-				# p_95  = Average Response Time for 95%
-				# cts   = Current Time Stamp
+					# The measured values are the follow
+					# rr    = Request Rate
+					# rt    = Response Time
+					# avgrt = Average Response Time
+					# p_95  = Average Response Time for 95%
+					# cts   = Current Time Stamp
 
-				print('rr    = ', rr)
-				print('rt    = ', rt)
-				print('p_95  = ', p_95)
-				print('avgrt = ', avgrt)
-				print('cts   = ', cts)
-				print()
+					print('rr    = ', rr)
+					print('rt    = ', rt)
+					print('p_95  = ', p_95)
+					print('avgrt = ', avgrt)
+					print('cts   = ', cts)
+					print()
 
 					
 		except Exception as e:
