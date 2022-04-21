@@ -14,8 +14,8 @@ print('                SETUP                  ')
 lb = '193.225.250.30'
 usr='ubuntu'
 nonce='046f0c7d-50c6-95f1-4cdc-2a45fe3658e1'
-rt_limit_upper = 2000
-rt_limit_lower = 100
+rt_limit_upper = 3000
+rt_limit_lower = 2000
 # cpu_limit_upper = 70
 # cpu_limit_lower = 40
 print('---------------------------------------')
