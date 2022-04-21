@@ -179,7 +179,7 @@ def main():
 					# Ask the metric for a given worker
 					# repWorker = '192.168.0.72'
 					repWorker = selectedWorker
-					repWorker = 'ubuntu@' + repWorker
+					repWorkerLogin = 'ubuntu@' + repWorker
 					print('------------------------')
 					print("repWorker= ", repWorker)
 					print('------------------------')
@@ -191,13 +191,13 @@ def main():
 
 					# Ha latni akarom hogy mibol kesszult az atlag
 					# statavg_all_short = subprocess.check_output(statcmd_all_short%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
-					statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorker),shell=True,universal_newlines=True)
+					statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorkerLogin),shell=True,universal_newlines=True)
 					print('_______________________________________________________')
 					print(statavg_all_short)
 
 					# A tenyleges atlag a kivalasztott metrikakra
 					# statavg_all_short = subprocess.check_output(statcmd_all_short_avg%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
-					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(repWorker),shell=True,universal_newlines=True)
+					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(repWorkerLogin),shell=True,universal_newlines=True)
 					print('_______________________________________________________')
 					print(statavg_all_short)
 
@@ -299,9 +299,10 @@ def main():
 					print('k (Control the action)  = ', k)
 					print('CPU Total               = ', _cpu_total)
 					print('CPU Upper Limit         = ', cpu_limit_upper)
+					print('CPU Lower Limit         = ', cpu_limit_lower)
 
 
-					if k > 0: 						# if continous suggestion of scale out then scale out
+					if k > 0: 								# if continous suggestion of scale out then scale out
 						timesSuggested+=1
 						print('timesSuggestedout scale = ', timesSuggested)
 						if timesSuggested>3: 				# control continous suggestion number here
@@ -313,16 +314,18 @@ def main():
 								workerStatus=workerInit()
 							w=sum(workerStatus.values())
 
+					elif k < 0: 							# if continous suggestion to scale in, then scale in
+						timesSuggested+=1
+						if timesSuggested>3: 				# control continous suggestion number here
+							timesSuggested=0
+							# for t in range(0,-k):
+							#	print "Removing worker",t+1
+							removeWorker(workerStatus,repWorker,scalelog)	# remove only one worker
+							workerStatus=workerInit()					
+							w=sum(workerStatus.values())
+					else:
+						timesSuggested=0 					# if neither scale out nor scale in was suggested, reset the timesSuggested
 
-
-
-
-
-
-
-
-
-					
 
 
 					
@@ -384,9 +387,6 @@ def addWorker(workerStatus,scalelog):
 			break
 	if workerIP!=-1:
 		print('Adding worker: ' + workerIP)
-		print('bura bura bura\n\n')
-	
-		enablecmd= 'curl -s -o /dev/null -XPOST "http://193.225.250.30:80/balancer-manager?" -H "Referer: http://193.225.250.30:80/balancer-manager?b=backend-cluster&w=http://192.168.0.218:8080&nonce=046f0c7d-50c6-95f1-4cdc-2a45fe3658e1" -d b="backend-cluster" -d w="http://192.168.0.218:8080" -d nonce="046f0c7d-50c6-95f1-4cdc-2a45fe3658e1" -d w_status_D=0'
 
 		enablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=0'%(lb,lb,workerIP,nonce,workerIP,nonce)
 
@@ -397,6 +397,32 @@ def addWorker(workerStatus,scalelog):
 		# scalelog.flush()
 	else:
 		print('\n\n ------------- No workers left ------------- \n\n')	
+
+
+def removeWorker(workerStatus,repWorker,scalelog):
+	print('\n------------ removeWorker function ----------- \n')
+	workerIP=-1
+	for worker in workerStatus:
+		print('worker  =', worker)
+		print('repWorker = ', repWorker)
+		if( workerStatus[worker] == True and worker != repWorker ):
+			workerIP=worker
+			print('------------ ot fogjuk elvenni ----------- ')
+			print('workerIP = ', workerIP)
+			break
+	if workerIP!=-1:
+		print('Removing worker: ' + workerIP)
+
+		disablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=1'%(lb,lb,workerIP,nonce,workerIP,nonce)
+
+		print(disablecmd)
+
+		subprocess.check_output(disablecmd,shell=True)
+		# scalelog.write(datetime.datetime.now().strftime("%H:%M:%S ")+"Worker "+workerIP+" removed.\n")
+		# scalelog.flush()
+	else:
+		print('\n\n ------------- This else branch should not run ------------- \n\n')
+
 
 
 main()
