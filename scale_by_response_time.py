@@ -13,7 +13,7 @@ print('---------------------------------------')
 print('                SETUP                  ')
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='9673ead7-7655-47fa-9c32-2cbaab8cd7b9'
+nonce='046f0c7d-50c6-95f1-4cdc-2a45fe3658e1'
 rt_limit_upper = 2000
 rt_limit_lower = 100
 cpu_limit_upper = 70
@@ -292,6 +292,35 @@ def main():
 
 
 
+					# -----------------------------------------------------------
+					# Scale
+
+					print('Actual Worker Number    = ', w)
+					print('k (Control the action)  = ', k)
+					print('CPU Total               = ', _cpu_total)
+					print('CPU Upper Limit         = ', cpu_limit_upper)
+
+
+					if k > 0: 						# if continous suggestion of scale out then scale out
+						timesSuggested+=1
+						print('timesSuggestedout scale = ', timesSuggested)
+						if timesSuggested>3: 				# control continous suggestion number here
+							print('\n\n  Scale Out \n\n')
+							timesSuggested=0
+							for t in range(0,k): 			# add k workers one by one
+								addWorker(workerStatus,scalelog)
+								print('\n\n   addWorker   \n\n')
+								workerStatus=workerInit()
+							w=sum(workerStatus.values())
+
+
+
+
+
+
+
+
+
 
 					
 
@@ -343,6 +372,31 @@ def getActiveWorkers(d):
 		print(worker.get(0))
 		print(worker.get(1))
 	return 0
+
+def addWorker(workerStatus,scalelog):
+	print('\n------------ addWorker function ----------- \n')
+	workerIP=-1
+	for worker in workerStatus:
+		if workerStatus[worker]==False:
+			workerIP=worker
+			print('------------ ot fogjuk hozzaadni ----------- ')
+			print('workerIP = ', workerIP)
+			break
+	if workerIP!=-1:
+		print('Adding worker: ' + workerIP)
+		print('bura bura bura\n\n')
+	
+		enablecmd= 'curl -s -o /dev/null -XPOST "http://193.225.250.30:80/balancer-manager?" -H "Referer: http://193.225.250.30:80/balancer-manager?b=backend-cluster&w=http://192.168.0.218:8080&nonce=046f0c7d-50c6-95f1-4cdc-2a45fe3658e1" -d b="backend-cluster" -d w="http://192.168.0.218:8080" -d nonce="046f0c7d-50c6-95f1-4cdc-2a45fe3658e1" -d w_status_D=0'
+
+		enablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=0'%(lb,lb,workerIP,nonce,workerIP,nonce)
+
+		print(enablecmd)
+
+		subprocess.check_output(enablecmd,shell=True)
+		# scalelog.write(datetime.datetime.now().strftime("%H:%M:%S ")+"Worker "+workerIP+" added.\n")
+		# scalelog.flush()
+	else:
+		print('\n\n ------------- No workers left ------------- \n\n')	
 
 
 main()
