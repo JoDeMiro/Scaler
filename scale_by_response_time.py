@@ -16,8 +16,8 @@ usr='ubuntu'
 nonce='046f0c7d-50c6-95f1-4cdc-2a45fe3658e1'
 rt_limit_upper = 2000
 rt_limit_lower = 100
-cpu_limit_upper = 70
-cpu_limit_lower = 40
+# cpu_limit_upper = 70
+# cpu_limit_lower = 40
 print('---------------------------------------')
 
 
@@ -44,10 +44,12 @@ def main():
 
 	# Ebbe fogom irni a metikakat
 	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
+	# metriclog=open('./metric.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
 	mlog=csv.writer(metriclog)
 
 	# Ebbe fogom tenni a skalazasi adatokat
 	scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
+	# scalelog=open('./scale.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w')
 
 	loglines=follow(accesslog)
 	first=True    # hack to check if the script was just started
@@ -249,7 +251,7 @@ def main():
 
 
 					k = 0
-					if( _cpu_total > cpu_limit_upper ): # if _cpu_total is greater than the upper limit, consider scaling out
+					if( rt > rt_limit_upper ): # if response time is greater than the upper limit, consider scaling out
 						print('---------------------------------------')
 						print('         Testing for scale out         ')
 						print('---------------------------------------')
@@ -258,7 +260,7 @@ def main():
 
 
 
-					if( _cpu_total < cpu_limit_lower and w > 1): # if _cpu_total is less than lower limit, consider scaling in
+					if( rt < rt_limit_lower and w > 1): # if response time is less than lower limit, consider scaling in
 						print('---------------------------------------')
 						print('         Testing for scale in          ')
 						print('---------------------------------------')
@@ -295,11 +297,11 @@ def main():
 					# -----------------------------------------------------------
 					# Scale
 
-					print('Actual Worker Number    = ', w)
-					print('k (Control the action)  = ', k)
-					print('CPU Total               = ', _cpu_total)
-					print('CPU Upper Limit         = ', cpu_limit_upper)
-					print('CPU Lower Limit         = ', cpu_limit_lower)
+					print('Actual Worker Number      = ', w)
+					print('k (Control the action)    = ', k)
+					print('Response Time             = ', rt)
+					print('Response Time Upper Limit = ', rt_limit_upper)
+					print('Response Time Lower Limit = ', rt_limit_lower)
 
 
 					if k > 0: 								# if continous suggestion of scale out then scale out
