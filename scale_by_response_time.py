@@ -1,4 +1,4 @@
-# cpu.py
+# scale_by_response_time.py
 
 import re
 import csv
