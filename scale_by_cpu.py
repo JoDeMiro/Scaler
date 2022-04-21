@@ -43,11 +43,13 @@ def main():
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
 	# Ebbe fogom irni a metikakat
-	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
+	# metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
+	metriclog=open('./metric.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
 	mlog=csv.writer(metriclog)
 
 	# Ebbe fogom tenni a skalazasi adatokat
-	scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
+	# scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
+	scalelog=open('./scale.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w')
 
 	loglines=follow(accesslog)
 	first=True    # hack to check if the script was just started
