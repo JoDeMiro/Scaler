@@ -43,10 +43,9 @@ def main():
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
 	# Ebbe fogom irni a metikakat
-	# metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
 	metriclog=open('./metric_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w', newline='')
-
 	# metriclog=open('./metric_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
+
 	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
 	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
 	metriclog.write('time, response_time_p95, response_time, worker_number, request_rate,')
