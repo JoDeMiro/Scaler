@@ -13,7 +13,7 @@ print('---------------------------------------')
 print('                SETUP                  ')
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='046f0c7d-50c6-95f1-4cdc-2a45fe3658e1'
+nonce='dd59b6f3-aef7-5bf7-0769-3a8868314bfd'
 # rt_limit_upper = 2000
 # rt_limit_lower = 100
 cpu_limit_upper = 70
@@ -50,6 +50,9 @@ def main():
 	# Ebbe fogom tenni a skalazasi adatokat
 	# scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
 	scalelog=open('./scale.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w')
+	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_nuber_is\n'
+	scalelog.write(scalelog_header)
+	scalelog.flush()
 
 	loglines=follow(accesslog)
 	first=True    # hack to check if the script was just started
@@ -306,7 +309,7 @@ def main():
 
 					if k > 0: 								# if continous suggestion of scale out then scale out
 						timesSuggested+=1
-						print('timesSuggestedout scale = ', timesSuggested)
+						print('timesSuggested out scale = ', timesSuggested)
 						if timesSuggested>3: 				# control continous suggestion number here
 							print('\n\n  Scale Out \n\n')
 							timesSuggested=0
@@ -318,11 +321,13 @@ def main():
 
 					elif k < 0: 							# if continous suggestion to scale in, then scale in
 						timesSuggested+=1
+						print('timesSuggested in scale = ', timesSuggested)
 						if timesSuggested>3: 				# control continous suggestion number here
 							timesSuggested=0
 							# for t in range(0,-k):
 							#	print "Removing worker",t+1
 							removeWorker(workerStatus,repWorker,scalelog)	# remove only one worker
+							print('\n\n   removeWorker   \n\n')
 							workerStatus=workerInit()					
 							w=sum(workerStatus.values())
 					else:
@@ -392,11 +397,15 @@ def addWorker(workerStatus,scalelog):
 
 		enablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=0'%(lb,lb,workerIP,nonce,workerIP,nonce)
 
-		print(enablecmd)
+		# print(enablecmd)
 
 		subprocess.check_output(enablecmd,shell=True)
-		# scalelog.write(datetime.datetime.now().strftime("%H:%M:%S ")+"Worker "+workerIP+" added.\n")
-		# scalelog.flush()
+
+		_w = sum(workerStatus.values())
+		_w_next = _w + 1
+
+		scalelog.write(datetime.datetime.now().strftime("%H:%M:%S")+",\"Worker "+workerIP+" added.\"," + str(_w) + "," + str(_w_next) + "\n")
+		scalelog.flush()
 	else:
 		print('\n\n ------------- No workers left ------------- \n\n')	
 
@@ -417,11 +426,15 @@ def removeWorker(workerStatus,repWorker,scalelog):
 
 		disablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=1'%(lb,lb,workerIP,nonce,workerIP,nonce)
 
-		print(disablecmd)
+		# print(disablecmd)
 
 		subprocess.check_output(disablecmd,shell=True)
-		# scalelog.write(datetime.datetime.now().strftime("%H:%M:%S ")+"Worker "+workerIP+" removed.\n")
-		# scalelog.flush()
+
+		_w = sum(workerStatus.values())
+		_w_next = _w - 1
+
+		scalelog.write(datetime.datetime.now().strftime("%H:%M:%S")+",\"Worker "+workerIP+" removed.\"," + str(_w) + "," + str(_w_next) + "\n")
+		scalelog.flush()
 	else:
 		print('\n\n ------------- This else branch should not run ------------- \n\n')
 

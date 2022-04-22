@@ -13,7 +13,7 @@ print('---------------------------------------')
 print('                SETUP                  ')
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='046f0c7d-50c6-95f1-4cdc-2a45fe3658e1'
+nonce='dd59b6f3-aef7-5bf7-0769-3a8868314bfd'
 rt_limit_upper = 3000
 rt_limit_lower = 2000
 # cpu_limit_upper = 70
@@ -43,13 +43,26 @@ def main():
 	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
 
 	# Ebbe fogom irni a metikakat
-	metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
-	# metriclog=open('./metric.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
+	# metriclog=open('./metric.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w', newline='')
+	metriclog=open('./metric_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w', newline='')
+
+	# metriclog=open('./metric_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
+	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
+	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
+	metriclog.write('time, response_time_p95, response_time, worker_number, request_rate,')
+	metriclog.write('CPU0User%, CPU0Idle%, CPU0Total%, CPU1User%, CPU1Idle%, CPU1Total%,')
+	metriclog.write('[DSK:sda]Reads, [DSK:sda]RMerge, [DSK:sda]RKBytes, [DSK:sda]WaitR, [DSK:sda]Writes, [DSK:sda]WMerge, [DSK:sda]WKBytes, [DSK:sda]WaitW, [DSK:sda]Request, [DSK:sda]QueLen, [DSK:sda]Wait, [DSK:sda]SvcTim, [DSK:sda]Util,')
+	metriclog.write('[NUMA:0]Used, [NUMA:0]Free, [NUMA:0]Slab, [NUMA:0]Mapped, [NUMA:0]Anon, [NUMA:0]AnonH, [NUMA:0]Inactive, [NUMA:0]Hits,')
+	metriclog.write('[TCPD]InReceives, [TCPD]InDelivers, [TCPD]OutRequests, [TCPD]InSegs, [TCPD]OutSegs\n')
+	metriclog.flush()
 	mlog=csv.writer(metriclog)
 
 	# Ebbe fogom tenni a skalazasi adatokat
-	scalelog=open('./scale.log.rt_threshold%i_%i'%(rt_limit_lower,rt_limit_upper),'w')
-	# scalelog=open('./scale.log.cpu_threshold%i_%i'%(cpu_limit_lower,cpu_limit_upper),'w')
+	scalelog=open('./scale_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w')
+	# scalelog=open('./scale_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w')
+	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_nuber_is\n'
+	scalelog.write(scalelog_header)
+	scalelog.flush()
 
 	loglines=follow(accesslog)
 	first=True    # hack to check if the script was just started
@@ -210,6 +223,7 @@ def main():
 					# 3 - 15 - CPU1User%
 					# 4 - 22 - CPU1Idle%
 					# 5 - 23 - CPU1Total%
+
 					# 6 - 28 - [DSK:sda]Reads
 					# 7 - 29 - [DSK:sda]RMerge 
 					# 8 - 30 - [DSK:sda]RKBytes
@@ -306,7 +320,7 @@ def main():
 
 					if k > 0: 								# if continous suggestion of scale out then scale out
 						timesSuggested+=1
-						print('timesSuggestedout scale = ', timesSuggested)
+						print('timesSuggested out scale = ', timesSuggested)
 						if timesSuggested>3: 				# control continous suggestion number here
 							print('\n\n  Scale Out \n\n')
 							timesSuggested=0
@@ -318,11 +332,13 @@ def main():
 
 					elif k < 0: 							# if continous suggestion to scale in, then scale in
 						timesSuggested+=1
+						print('timesSuggested in scale = ', timesSuggested)
 						if timesSuggested>3: 				# control continous suggestion number here
 							timesSuggested=0
 							# for t in range(0,-k):
 							#	print "Removing worker",t+1
 							removeWorker(workerStatus,repWorker,scalelog)	# remove only one worker
+							print('\n\n   removeWorker   \n\n')
 							workerStatus=workerInit()					
 							w=sum(workerStatus.values())
 					else:
@@ -392,11 +408,15 @@ def addWorker(workerStatus,scalelog):
 
 		enablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=0'%(lb,lb,workerIP,nonce,workerIP,nonce)
 
-		print(enablecmd)
+		# print(enablecmd)
 
 		subprocess.check_output(enablecmd,shell=True)
-		# scalelog.write(datetime.datetime.now().strftime("%H:%M:%S ")+"Worker "+workerIP+" added.\n")
-		# scalelog.flush()
+
+		_w = sum(workerStatus.values())
+		_w_next = _w + 1
+
+		scalelog.write(datetime.datetime.now().strftime("%H:%M:%S")+",\"Worker "+workerIP+" added.\"," + str(_w) + "," + str(_w_next) + "\n")
+		scalelog.flush()
 	else:
 		print('\n\n ------------- No workers left ------------- \n\n')	
 
@@ -417,11 +437,15 @@ def removeWorker(workerStatus,repWorker,scalelog):
 
 		disablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=1'%(lb,lb,workerIP,nonce,workerIP,nonce)
 
-		print(disablecmd)
+		# print(disablecmd)
 
 		subprocess.check_output(disablecmd,shell=True)
-		# scalelog.write(datetime.datetime.now().strftime("%H:%M:%S ")+"Worker "+workerIP+" removed.\n")
-		# scalelog.flush()
+
+		_w = sum(workerStatus.values())
+		_w_next = _w - 1
+
+		scalelog.write(datetime.datetime.now().strftime("%H:%M:%S")+",\"Worker "+workerIP+" removed.\"," + str(_w) + "," + str(_w_next) + "\n")
+		scalelog.flush()
 	else:
 		print('\n\n ------------- This else branch should not run ------------- \n\n')
 
