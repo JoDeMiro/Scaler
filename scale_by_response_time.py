@@ -5,6 +5,7 @@ import csv
 import time
 import numpy
 import datetime
+import requests
 import subprocess
 
 import sys,os
@@ -27,9 +28,14 @@ print('---------------------------------------')
 print('                SETUP                  ')
 print('---------------------------------------')
 
+url = 'http://127.0.0.1/balancer-manager'
+
+r = requests.get(url)
+nonce = re.search(r'nonce=(.*?)">', r.text).group(1)
+
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='8a6e7498-54cc-60d6-b8c4-0dbff2e8517b'
+# nonce='62c1d1d7-1c8a-152e-6b41-65bf544025c5'
 log_file='zulu.log'
 init_vm_number = 1
 trigger_count = 1
