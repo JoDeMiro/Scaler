@@ -1,7 +1,6 @@
 import re
 import csv
 import time
-import numpy
 import datetime
 import subprocess
 
