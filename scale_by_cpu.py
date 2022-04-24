@@ -15,17 +15,27 @@ print('---------------------------------------')
 print('                RESTART                ')
 print('---------------------------------------')
 
-restart()
+# restart()
+
+print('---------------------------------------')
+print('                SET VMN                ')
+print('---------------------------------------')
 
 
 
 print('---------------------------------------')
 print('                SETUP                  ')
+print('---------------------------------------')
+
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='6bcb3523-089a-7d35-4194-16b43df63b13'
+nonce='9ad31c9f-3977-baa5-3a78-e690a8f58038'
 log_file='zulu.log'
+init_vm_number = 1
 
+
+print('---------------------------------------')
+print('                CONFIG                 ')
 # rt_limit_upper = 2000
 # rt_limit_lower = 100
 cpu_limit_upper = 70
@@ -39,15 +49,32 @@ print('---------------------------------------')
 
 def follow(thefile):
 	thefile.seek(0,2)
+	# print('\n\n\n')
+	# print(thefile.seek(0,2))
+	# print('\n\n\n')
 	while True:
 		line = thefile.readline()
+		# print('\n\n\n')
+		# print(line)
+		# print('\n\n\n')
 		if not line:
 			time.sleep(0.1)
 			continue
+		print(line)
 		yield line
 
 
 def main():
+
+
+	print('---------------------------------------')
+	print('                SET VMN                ')
+	print('---------------------------------------')
+
+
+	set_init_vm_number(init_vm_number)
+
+
 	print('---------------------------------------')
 	print('                  MAIN                 ')
 	print('---------------------------------------')
@@ -105,17 +132,48 @@ def main():
 		try:
 			if first: # if script just started, initialize the necessary variables 
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
+
+
+				print('\n\n')
+				print('------------------------------------------------------------------------------')
+				print('------------------------------------------------------------------------------')
+				print(matches)
+				# <re.Match object; span=(0, 143), match='193.225.250.30:80 80.95.82.243 - - [23/Apr/2022:1>
+				# 193.225.250.30:80 80.95.82.243 - - [23/Apr/2022:19:10:47 +0000] "GET / HTTP/1.1" 200 14694 "-" "Apache-HttpClient/4.5.10 (Java/1.8.0_291)" 4238
 				cts=matches.group(1)
+				print('cts = ', cts)
+				print('matches.group(2) = ', matches.group(2))     # ez az utolso ertek a line-ban
+				# 4238
 				RT=float(matches.group(2))/1000.
+				print('RT = float(matches.group(2))/1000. = ', RT)
 				RTs.append(RT)
+				print('RTs.append(RT) =', RTs)
 				N=1
 				first=False
+				print('------------------------------------------------------------------------------')
+				print('------------------------------------------------------------------------------')
+				print('\n\n')
+
 				print('This was the first attempt')
 			else:
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
+
+				print('\n\n')
+				print('------------------------------------------------------------------------------')
+				print('------------------------------------------------------------------------------')
+				print(matches)
 				ts=matches.group(1) # extract the time stamp of request
+				print('ts = matches.group(1) extract the time stamp of request = ', ts)
+				print('cts = curent time stamp = ', cts)
+
+
 				if cts==ts: # if the timestamp is same, not changed then keep incrementing the variables
 					RTs.append(float(matches.group(2))/1000.) # add to list for percentile
+					print('RTs = ', RTs)
+					print('------------------------------------------------------------------------------')
+					print('------------------------------------------------------------------------------')
+					print('\n\n')
+
 					RT+=float(matches.group(2))/1000. # add to sum for mean
 					N+=1 
 				elif cts<ts or (ts[0:7]=="00:00:0" and cts[0:7]=="23:59:5"): # case when the new request timestamp has changed -> interval passed
@@ -235,6 +293,7 @@ def main():
 					# 3 - 15 - CPU1User%
 					# 4 - 22 - CPU1Idle%
 					# 5 - 23 - CPU1Total%
+
 					# 6 - 28 - [DSK:sda]Reads
 					# 7 - 29 - [DSK:sda]RMerge 
 					# 8 - 30 - [DSK:sda]RKBytes
@@ -322,11 +381,11 @@ def main():
 					# -----------------------------------------------------------
 					# Scale
 
-					print('Actual Worker Number    = ', w)
-					print('k (Control the action)  = ', k)
-					print('CPU Total               = ', _cpu_total)
-					print('CPU Upper Limit         = ', cpu_limit_upper)
-					print('CPU Lower Limit         = ', cpu_limit_lower)
+					print('Actual Worker Number      = ', w)
+					print('k (Control the action)    = ', k)
+					print('CPU Total                 = ', _cpu_total)
+					print('CPU Upper Limit           = ', cpu_limit_upper)
+					print('CPU Lower Limit           = ', cpu_limit_lower)
 
 
 					if k > 0: 								# if continous suggestion of scale out then scale out
@@ -404,6 +463,30 @@ def getActiveWorkers(d):
 		print(worker.get(0))
 		print(worker.get(1))
 	return 0
+
+
+def set_init_vm_number(init_vm_number):
+	workerStatus = workerInit()
+	w = sum(workerStatus.values())
+	print(workerStatus)
+	counter = 0
+	for worker in workerStatus:
+		# if counter == 0:
+		if counter < init_vm_number:
+			enable_worker_ip = worker
+			print('enable_worker_ip =', enable_worker_ip)
+			enablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=0'%(lb,lb,enable_worker_ip,nonce,enable_worker_ip,nonce)
+			print(enablecmd)
+			subprocess.check_output(enablecmd,shell=True)
+			counter += 1
+		else:
+			disable_worker_ip = worker
+			print('disable_worker_ip =', disable_worker_ip)
+			disablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=1'%(lb,lb,disable_worker_ip,nonce,disable_worker_ip,nonce)
+			print(disablecmd)
+			subprocess.check_output(disablecmd,shell=True)
+			counter += 1
+		
 
 def addWorker(workerStatus,scalelog):
 	print('\n------------ addWorker function ----------- \n')

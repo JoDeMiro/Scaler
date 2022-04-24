@@ -15,23 +15,30 @@ print('---------------------------------------')
 print('                RESTART                ')
 print('---------------------------------------')
 
-restart()
+# restart()
+
+print('---------------------------------------')
+print('                SET VMN                ')
+print('---------------------------------------')
 
 
 
 print('---------------------------------------')
 print('                SETUP                  ')
+print('---------------------------------------')
+
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='6bcb3523-089a-7d35-4194-16b43df63b13'
+nonce='8a6e7498-54cc-60d6-b8c4-0dbff2e8517b'
 log_file='zulu.log'
+init_vm_number = 1
+trigger_count = 1
 
 
-
-
-
+print('---------------------------------------')
+print('                CONFIG                 ')
 rt_limit_upper = 3000
-rt_limit_lower = 2000
+rt_limit_lower = 300
 # cpu_limit_upper = 70
 # cpu_limit_lower = 40
 print('---------------------------------------')
@@ -59,6 +66,18 @@ def follow(thefile):
 
 
 def main():
+
+
+	print('---------------------------------------')
+	print('                SET VMN                ')
+	print('---------------------------------------')
+
+
+	set_init_vm_number(init_vm_number)
+
+
+
+
 	print('---------------------------------------')
 	print('                  MAIN                 ')
 	print('---------------------------------------')
@@ -121,7 +140,7 @@ def main():
 				print('\n\n')
 				print('------------------------------------------------------------------------------')
 				print('------------------------------------------------------------------------------')
-				print(matches)
+				# print(matches)
 				# <re.Match object; span=(0, 143), match='193.225.250.30:80 80.95.82.243 - - [23/Apr/2022:1>
 				# 193.225.250.30:80 80.95.82.243 - - [23/Apr/2022:19:10:47 +0000] "GET / HTTP/1.1" 200 14694 "-" "Apache-HttpClient/4.5.10 (Java/1.8.0_291)" 4238
 				cts=matches.group(1)
@@ -145,7 +164,7 @@ def main():
 				print('\n\n')
 				print('------------------------------------------------------------------------------')
 				print('------------------------------------------------------------------------------')
-				print(matches)
+				# print(matches)
 				ts=matches.group(1) # extract the time stamp of request
 				print('ts = matches.group(1) extract the time stamp of request = ', ts)
 				print('cts = curent time stamp = ', cts)
@@ -375,7 +394,7 @@ def main():
 					if k > 0: 								# if continous suggestion of scale out then scale out
 						timesSuggested+=1
 						print('timesSuggested out scale = ', timesSuggested)
-						if timesSuggested>3: 				# control continous suggestion number here
+						if timesSuggested >= trigger_count: 				# control continous suggestion number here
 							print('\n\n  Scale Out \n\n')
 							timesSuggested=0
 							for t in range(0,k): 			# add k workers one by one
@@ -387,7 +406,7 @@ def main():
 					elif k < 0: 							# if continous suggestion to scale in, then scale in
 						timesSuggested+=1
 						print('timesSuggested in scale = ', timesSuggested)
-						if timesSuggested>3: 				# control continous suggestion number here
+						if timesSuggested >= trigger_count: 				# control continous suggestion number here
 							timesSuggested=0
 							# for t in range(0,-k):
 							#	print "Removing worker",t+1
@@ -447,6 +466,32 @@ def getActiveWorkers(d):
 		print(worker.get(0))
 		print(worker.get(1))
 	return 0
+
+
+def set_init_vm_number(init_vm_number):
+	workerStatus = workerInit()
+	w = sum(workerStatus.values())
+	print(workerStatus)
+	counter = 0
+	for worker in workerStatus:
+		# if counter == 0:
+		if counter < init_vm_number:
+			enable_worker_ip = worker
+			print('enable_worker_ip =', enable_worker_ip)
+			enablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=0'%(lb,lb,enable_worker_ip,nonce,enable_worker_ip,nonce)
+			print(enablecmd)
+			subprocess.check_output(enablecmd,shell=True)
+			counter += 1
+		else:
+			disable_worker_ip = worker
+			print('disable_worker_ip =', disable_worker_ip)
+			disablecmd= 'curl -s -o /dev/null -XPOST "http://%s/balancer-manager?" -H "Referer: http://%s/balancer-manager?b=backend-cluster&w=http://%s:8080&nonce=%s" -d b="backend-cluster" -d w="http://%s:8080" -d nonce="%s" -d w_status_D=1'%(lb,lb,disable_worker_ip,nonce,disable_worker_ip,nonce)
+			print(disablecmd)
+			subprocess.check_output(disablecmd,shell=True)
+			counter += 1
+		
+
+
 
 def addWorker(workerStatus,scalelog):
 	print('\n------------ addWorker function ----------- \n')
