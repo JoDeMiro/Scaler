@@ -9,11 +9,27 @@ import subprocess
 
 import sys,os
 
+from serverreset import restart
+
+print('---------------------------------------')
+print('                RESTART                ')
+print('---------------------------------------')
+
+restart()
+
+
+
 print('---------------------------------------')
 print('                SETUP                  ')
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='dd59b6f3-aef7-5bf7-0769-3a8868314bfd'
+nonce='6bcb3523-089a-7d35-4194-16b43df63b13'
+log_file='zulu.log'
+
+
+
+
+
 rt_limit_upper = 3000
 rt_limit_lower = 2000
 # cpu_limit_upper = 70
@@ -27,11 +43,18 @@ print('---------------------------------------')
 
 def follow(thefile):
 	thefile.seek(0,2)
+	# print('\n\n\n')
+	# print(thefile.seek(0,2))
+	# print('\n\n\n')
 	while True:
 		line = thefile.readline()
+		# print('\n\n\n')
+		# print(line)
+		# print('\n\n\n')
 		if not line:
 			time.sleep(0.1)
 			continue
+		print(line)
 		yield line
 
 
@@ -40,7 +63,8 @@ def main():
 	print('                  MAIN                 ')
 	print('---------------------------------------')
 	# Ebbol olvasom ki a response timot
-	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
+	# accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
+	accesslog=open('/var/log/apache2/'+log_file,'r')
 
 	# Ebbe fogom irni a metikakat
 	metriclog=open('./metric_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w', newline='')
@@ -92,17 +116,48 @@ def main():
 		try:
 			if first: # if script just started, initialize the necessary variables 
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
+
+
+				print('\n\n')
+				print('------------------------------------------------------------------------------')
+				print('------------------------------------------------------------------------------')
+				print(matches)
+				# <re.Match object; span=(0, 143), match='193.225.250.30:80 80.95.82.243 - - [23/Apr/2022:1>
+				# 193.225.250.30:80 80.95.82.243 - - [23/Apr/2022:19:10:47 +0000] "GET / HTTP/1.1" 200 14694 "-" "Apache-HttpClient/4.5.10 (Java/1.8.0_291)" 4238
 				cts=matches.group(1)
+				print('cts = ', cts)
+				print('matches.group(2) = ', matches.group(2))     # ez az utolso ertek a line-ban
+				# 4238
 				RT=float(matches.group(2))/1000.
+				print('RT = float(matches.group(2))/1000. = ', RT)
 				RTs.append(RT)
+				print('RTs.append(RT) =', RTs)
 				N=1
 				first=False
+				print('------------------------------------------------------------------------------')
+				print('------------------------------------------------------------------------------')
+				print('\n\n')
+
 				print('This was the first attempt')
 			else:
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
+
+				print('\n\n')
+				print('------------------------------------------------------------------------------')
+				print('------------------------------------------------------------------------------')
+				print(matches)
 				ts=matches.group(1) # extract the time stamp of request
+				print('ts = matches.group(1) extract the time stamp of request = ', ts)
+				print('cts = curent time stamp = ', cts)
+
+
 				if cts==ts: # if the timestamp is same, not changed then keep incrementing the variables
 					RTs.append(float(matches.group(2))/1000.) # add to list for percentile
+					print('RTs = ', RTs)
+					print('------------------------------------------------------------------------------')
+					print('------------------------------------------------------------------------------')
+					print('\n\n')
+
 					RT+=float(matches.group(2))/1000. # add to sum for mean
 					N+=1 
 				elif cts<ts or (ts[0:7]=="00:00:0" and cts[0:7]=="23:59:5"): # case when the new request timestamp has changed -> interval passed

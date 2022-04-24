@@ -9,11 +9,23 @@ import subprocess
 
 import sys,os
 
+from serverreset import restart
+
+print('---------------------------------------')
+print('                RESTART                ')
+print('---------------------------------------')
+
+restart()
+
+
+
 print('---------------------------------------')
 print('                SETUP                  ')
 lb = '193.225.250.30'
 usr='ubuntu'
-nonce='dd59b6f3-aef7-5bf7-0769-3a8868314bfd'
+nonce='6bcb3523-089a-7d35-4194-16b43df63b13'
+log_file='zulu.log'
+
 # rt_limit_upper = 2000
 # rt_limit_lower = 100
 cpu_limit_upper = 70
@@ -40,7 +52,8 @@ def main():
 	print('                  MAIN                 ')
 	print('---------------------------------------')
 	# Ebbol olvasom ki a response timot
-	accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
+	# accesslog=open('/var/log/apache2/other_vhosts_access.log','r')
+	accesslog=open('/var/log/apache2/'+log_file,'r')
 
 	# Ebbe fogom irni a metikakat
 	# metriclog=open('./metric_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w', newline='')
