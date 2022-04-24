@@ -18,10 +18,10 @@ print('---------------------------------------')
 # restart()
 
 print('---------------------------------------')
-print('                SET VMN                ')
+print('                SET LOG                ')
 print('---------------------------------------')
 
-
+print_statavg_all_short = False
 
 print('---------------------------------------')
 print('                SETUP                  ')
@@ -37,8 +37,8 @@ trigger_count = 1
 
 print('---------------------------------------')
 print('                CONFIG                 ')
-rt_limit_upper = 3000
-rt_limit_lower = 300
+rt_limit_upper = 500
+rt_limit_lower = 200
 # cpu_limit_upper = 70
 # cpu_limit_lower = 40
 print('---------------------------------------')
@@ -61,7 +61,7 @@ def follow(thefile):
 		if not line:
 			time.sleep(0.1)
 			continue
-		print(line)
+		# print(line)
 		yield line
 
 
@@ -161,37 +161,55 @@ def main():
 			else:
 				matches=re.search('.*:([0-9]*:[0-9]*:[0-9])[0-9] .* ([0-9]*)',line)
 
-				print('\n\n')
-				print('------------------------------------------------------------------------------')
-				print('------------------------------------------------------------------------------')
+				# print('\n\n')
+				# print('------------------------------------------------------------------------------')
+				# print('------------------------------------------------------------------------------')
 				# print(matches)
 				ts=matches.group(1) # extract the time stamp of request
-				print('ts = matches.group(1) extract the time stamp of request = ', ts)
-				print('cts = curent time stamp = ', cts)
+				# print('ts = matches.group(1) extract the time stamp of request = ', ts)
+				# print('cts = curent time stamp = ', cts)
 
 
 				if cts==ts: # if the timestamp is same, not changed then keep incrementing the variables
 					RTs.append(float(matches.group(2))/1000.) # add to list for percentile
-					print('RTs = ', RTs)
-					print('------------------------------------------------------------------------------')
-					print('------------------------------------------------------------------------------')
-					print('\n\n')
+					# print('RTs = ', RTs)
+
+					RTs_array = numpy.array(RTs)
+					mean = RTs_array.mean()
+					median = numpy.median(RTs_array)
+					maximum = RTs_array.max()
+					minimum = RTs_array.min()
+					std = RTs_array.std()
+					# print('mean = {:.2f}, med = {:.2f}, min = {:.2f}, max = {:.2f}, std = {:.2f}'.format(mean, median, minimum, maximum, std))					
+					# print('------------------------------------------------------------------------------')
+					# print('------------------------------------------------------------------------------')
+					# print('\n\n')
 
 					RT+=float(matches.group(2))/1000. # add to sum for mean
-					N+=1 
+					N+=1
 				elif cts<ts or (ts[0:7]=="00:00:0" and cts[0:7]=="23:59:5"): # case when the new request timestamp has changed -> interval passed
 					rt=float(RT/N)       # calculate average rt
 					avgrt=rt
 					rr=N                 # request rate 
 					p_95=numpy.percentile(RTs,95) # calculate percentile
-					# print('--------------------------------')
-					# print('len(RTs) = ', len(RTs))
-					# print(RTs)
-					# print('--------------------------------')
-					print("====== Average RT for ten second interval %s is %f, 95th percentile is: %f and RC is %d ======"%(cts,rt,p_95,rr))
+					print('--------------------------------')
+					print('len(RTs) = ', len(RTs))
+					print(RTs)
+					print('--------------------------------')
+
+					RTs_array = numpy.array(RTs)
+					mean = RTs_array.mean()
+					median = numpy.median(RTs_array)
+					maximum = RTs_array.max()
+					minimum = RTs_array.min()
+					std = RTs_array.std()
+					# print('mean = {:.2f}, med = {:.2f}, min = {:.2f}, max = {:.2f}, std = {:.2f}'.format(mean, median, minimum, maximum, std))
+
+					print("\n\n====== Average RT for ten second interval %s is %f, 95th percentile is: %f and RC is %d ======"%(cts,rt,p_95,rr))
 					cts=ts # update the interval to current timestamp
 					RT=float(matches.group(2))/1000. # reinitialize RT, N , RTs variables for next interval
 					N=1
+					RTso = RTs
 					RTs=[RT]
 				
 					# The measured values are the follow
@@ -201,13 +219,14 @@ def main():
 					# p_95  = Average Response Time for 95%
 					# cts   = Current Time Stamp
 
-					print('rr    = ', rr)
-					print('rt    = ', rt)
-					print('p_95  = ', p_95)
-					print('avgrt = ', avgrt)
-					print('cts   = ', cts)
-					print('len(RTs)', len(RTs))
-					print('RTs', RTs)
+					print('rr     = ', rr)
+					print('rt     =  {:.2f}'.format(rt))
+					print('p_95   =  {:.2f}'.format(p_95))
+					print('avgrt  =  {:.2f}'.format(avgrt))
+					print('cts    = ', cts)
+					print('len(RTso)', len(RTso))
+					# print('RTso', RTso)
+
 
 
 
@@ -218,15 +237,23 @@ def main():
 
 					# Most az egyszeruseg miatt csak egy workerbol olvasom ki a metrikat
 					# Az utolso olyanon aki be van csatolva a terhelesbe
-					print('________________________')
+					# print('________________________')
 					selectedWorker = ''
 					for k, v in workerStatus.items():
-						print(k, v)
+						# print(k, v)
 						if( v == True ):
 							selectedWorker = k
-					print('------------------------')
-					print("selectedWorker = ", selectedWorker)
-					print('------------------------')
+					# print('------------------------')
+					# print("selectedWorker = ", selectedWorker)
+					# print('------------------------')
+
+					# Ask the metric for a given worker
+					# repWorker = '192.168.0.72'
+					repWorker = selectedWorker
+					repWorkerLogin = 'ubuntu@' + repWorker
+					# print('------------------------')
+					# print("repWorker= ", repWorker)
+					# print('------------------------')
 
 
 
@@ -263,14 +290,6 @@ def main():
 					# 3 - [CPU:0]User%
 					# 5 - [CPU:0]Sys%
 					# 
-							
-					# Ask the metric for a given worker
-					# repWorker = '192.168.0.72'
-					repWorker = selectedWorker
-					repWorkerLogin = 'ubuntu@' + repWorker
-					print('------------------------')
-					print("repWorker= ", repWorker)
-					print('------------------------')
 
 
 					# Ez az osszes metrikat visszaadja
@@ -279,15 +298,17 @@ def main():
 
 					# Ha latni akarom hogy mibol kesszult az atlag
 					# statavg_all_short = subprocess.check_output(statcmd_all_short%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
-					statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorkerLogin),shell=True,universal_newlines=True)
-					print('_______________________________________________________')
-					print(statavg_all_short)
+					if( print_statavg_all_short ):
+						statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorkerLogin),shell=True,universal_newlines=True)
+						print('_______________________________________________________\n\n')
+						print(statavg_all_short)
 
 					# A tenyleges atlag a kivalasztott metrikakra
 					# statavg_all_short = subprocess.check_output(statcmd_all_short_avg%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
 					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(repWorkerLogin),shell=True,universal_newlines=True)
-					print('_______________________________________________________')
-					print(statavg_all_short)
+					if( print_statavg_all_short ):
+						print('_______________________________________________________\n\n')
+						print(statavg_all_short)
 
 					# Ebben a visszakapott stringben a metrikak a kovetkezoek
 					# 0 - 3  - CPU0User%
@@ -345,8 +366,6 @@ def main():
 
 						k+=1
 
-
-
 					if( rt < rt_limit_lower and w > 1): # if response time is less than lower limit, consider scaling in
 						print('---------------------------------------')
 						print('         Testing for scale in          ')
@@ -354,18 +373,36 @@ def main():
 
 						k-=1
 
+					# -----------------------------------------------------------
 					# Log to file
-					rt = avgrt 						# average Response Time for last interval
-					print('rt \t= ', rt)
-					statarr=[float(i) for i in statavg_all_short.split()] 	# all the stats from collectl
-					print('statarr = ', statarr)
-					carr=[rr/10]+statarr 					# calculated per second request rate since 10 second interval
+
+					print('\n\n')
+
 					print('---------------------------------------')
-					print('         Write Log metric file         ')
+					print('         RT Statistics                 ')
 					print('---------------------------------------')
 
-					print('carr \t= ', carr)
-					print(ts, p_95, rt, w)
+					stat = getStats(RTso)
+
+					print('average = {:.2f}'.format(stat['mean']))
+					print('median  = {:.2f}'.format(stat['median']))
+					print('minimum = {:.2f}'.format(stat['minimum']))
+					print('maximum = {:.2f}'.format(stat['maximum']))
+					print('std     = {:.2f}'.format(stat['std']))
+
+					rt = avgrt 						# average Response Time for last interval
+					print('rt      = {:.2f}'.format(rt))
+
+					# print('---------------------------------------')
+					# print('         Write Log metric file         ')
+					# print('---------------------------------------')
+
+					# Prepear data for statistic log files
+					statarr=[float(i) for i in statavg_all_short.split()] 	# all the stats from collectl
+					# print('statarr = ', statarr)
+					carr=[rr/10]+statarr 					# calculated per second request rate since 10 second interval
+					# print('carr \t= ', carr)
+					# print(ts, p_95, rt, w)
 
 					# mlog az mlog = csv.writer(metriclog)
 
@@ -373,7 +410,7 @@ def main():
 					# metriclog az egy open context manager
 					metriclog.flush()
 
-					print('_______________________________________________________')
+
 
 
 					# Ok Log file is ki van irva benne van minden amit akarok
@@ -384,9 +421,13 @@ def main():
 					# -----------------------------------------------------------
 					# Scale
 
+					print('---------------------------------------')
+					print('         Actual Scaling Logic          ')
+					print('---------------------------------------')
+
 					print('Actual Worker Number      = ', w)
 					print('k (Control the action)    = ', k)
-					print('Response Time             = ', rt)
+					print('Response Time             =  {:.2f}'.format(rt))
 					print('Response Time Upper Limit = ', rt_limit_upper)
 					print('Response Time Lower Limit = ', rt_limit_lower)
 
@@ -441,32 +482,42 @@ def workerInit():
 	# print('---------------------------------------')
 	# print(working)
 	# print('---------------------------------------')
-	print('All Workers IP Addresses --------------')
+	# print('All Workers IP Addresses --------------')
 	# iterate through all worker
 	for line in allW:
 		workerIP=re.search('.*http:\/\/([0-9]*.[0-9]*.[0-9]*.[0-9]*).*',line).group(1)
 		d[workerIP]=False
-		print(workerIP)
-	print('Init Ok Workers IP Addresses ----------')
+	#	print(workerIP)
+	# print('Init Ok Workers IP Addresses ----------')
 	# iterate through all worker and if found in 'Init Ok' request than set it's valut True
 	for line in working:
 		workerIP=re.search('.*http:\/\/([0-9]*.[0-9]*.[0-9]*.[0-9]*).*',line).group(1)
 		d[workerIP]=True
-		print(workerIP)
+	#	print(workerIP)
 	print('---------------------------------------')
 	print(d)
 	print('---------------------------------------')
 	return d
 
-def getActiveWorkers(d):
+def printActiveWorkers(d):
 	print(len(d))
 	for worker in d:
-		print(worker)
-		print(type(worker))
-		print(worker.get(0))
-		print(worker.get(1))
-	return 0
+	#	print(worker)
+	#	print(type(worker))
+	#	print(worker.get(0))
+	#	print(worker.get(1))
+		yield
 
+
+def getStats(RTs):
+	RTs_array = numpy.array(RTs)
+	mean = RTs_array.mean()
+	median = numpy.median(RTs_array)
+	maximum = RTs_array.max()
+	minimum = RTs_array.min()
+	std = RTs_array.std()
+	stat = {'mean': mean, 'median': median, 'minimum': minimum, 'maximum': maximum, 'std': std}
+	return stat
 
 def set_init_vm_number(init_vm_number):
 	workerStatus = workerInit()
@@ -489,8 +540,6 @@ def set_init_vm_number(init_vm_number):
 			print(disablecmd)
 			subprocess.check_output(disablecmd,shell=True)
 			counter += 1
-		
-
 
 
 def addWorker(workerStatus,scalelog):
@@ -499,7 +548,7 @@ def addWorker(workerStatus,scalelog):
 	for worker in workerStatus:
 		if workerStatus[worker]==False:
 			workerIP=worker
-			print('------------ ot fogjuk hozzaadni ----------- ')
+			print('------------ ot fogjuk hozzaadni ---------- ')
 			print('workerIP = ', workerIP)
 			break
 	if workerIP!=-1:
