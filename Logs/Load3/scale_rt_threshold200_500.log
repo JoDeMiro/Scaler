@@ -1,0 +1,27 @@
+time,notification,actual_vm_number_was,actual_vm_nuber_is
+17:02:23,"Worker 192.168.0.245 added.",1,2
+17:02:32,"Worker 192.168.0.73 added.",2,3
+17:02:41,"Worker 192.168.0.203 added.",3,4
+17:02:50,"Worker 192.168.0.253 removed.",4,3
+17:03:00,"Worker 192.168.0.245 removed.",3,2
+17:03:11,"Worker 192.168.0.253 added.",2,3
+17:03:21,"Worker 192.168.0.245 added.",3,4
+17:03:30,"Worker 192.168.0.253 removed.",4,3
+17:03:41,"Worker 192.168.0.245 removed.",3,2
+17:03:51,"Worker 192.168.0.253 added.",2,3
+17:04:00,"Worker 192.168.0.245 added.",3,4
+17:04:11,"Worker 192.168.0.253 removed.",4,3
+17:04:21,"Worker 192.168.0.245 removed.",3,2
+17:04:31,"Worker 192.168.0.253 added.",2,3
+17:04:40,"Worker 192.168.0.245 added.",3,4
+17:04:51,"Worker 192.168.0.253 removed.",4,3
+17:05:01,"Worker 192.168.0.245 removed.",3,2
+17:05:11,"Worker 192.168.0.253 added.",2,3
+17:05:20,"Worker 192.168.0.245 added.",3,4
+17:05:30,"Worker 192.168.0.253 removed.",4,3
+17:05:51,"Worker 192.168.0.245 removed.",3,2
+17:06:01,"Worker 192.168.0.253 added.",2,3
+17:06:10,"Worker 192.168.0.245 added.",3,4
+17:06:20,"Worker 192.168.0.253 removed.",4,3
+17:06:30,"Worker 192.168.0.245 removed.",3,2
+17:06:50,"Worker 192.168.0.73 removed.",2,1
