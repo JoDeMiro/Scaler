@@ -36,7 +36,9 @@ def reset():
 		print('---------------------------------------')
 
 		stop_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no killall -9 java'''
-		stop = subprocess.check_output(stop_cmd%(selectedWorker),shell=True,universal_newlines=True)
+		# stop = subprocess.check_output(stop_cmd%(selectedWorker),shell=True,universal_newlines=True)
+
+		stop = subprocess.call(stop_cmd%(selectedWorker),shell=True,universal_newlines=True)
 		print(stop)
 
 		print('---------------------------------------')
@@ -44,12 +46,15 @@ def reset():
 		print('---------------------------------------')
 
 		# restart_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no nohup java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=%s --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d > /dev/null &'''
-		restart_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no nohup java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=%s --server.tomcat.connection-timeout=3600 --server.tomcat.accept-count=200000 --server.tomcat.keep-alive-timeout=-1 --server.tomcat.max-connections=8192 --server.tomcat.max-keep-alive-requests=-1 --server.tomcat.threads.min-spare=1 --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d > /dev/null &'''
+		# restart_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no nohup java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=%s --server.tomcat.connection-timeout=3600 --server.tomcat.accept-count=200000 --server.tomcat.keep-alive-timeout=-1 --server.tomcat.max-connections=8192 --server.tomcat.max-keep-alive-requests=-1 --server.tomcat.threads.min-spare=1 --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d > /dev/null &'''
+		# restart_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no nohup java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=%s --server.tomcat.connection-timeout=3600 --server.tomcat.accept-count=200000 --server.tomcat.keep-alive-timeout=-1 --server.tomcat.max-connections=8192 --server.tomcat.max-keep-alive-requests=-1 --server.tomcat.threads.min-spare=1 --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d --management.endpoints.web.exposure.include=httptrace > /dev/null &'''
+		# restart_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no nohup java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=%s --server.tomcat.connection-timeout=3600 --server.tomcat.accept-count=200000 --server.tomcat.keep-alive-timeout=-1 --server.tomcat.max-connections=8192 --server.tomcat.max-keep-alive-requests=-1 --server.tomcat.threads.min-spare=1 --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d --management.endpoints.web.exposure.include=httptrace --server.tomcat.accesslog.enabled=true > /dev/null &'''
 
-		# java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=40 --server.tomcat.connection-timeout=3600 --server.tomcat.accept-count=2000 --server.tomcat.keep-alive-timeout=-1 --server.tomcat.max-connections=8192 --server.tomcat.max-keep-alive-requests=-1 --server.tomcat.threads.min-spare=1 --logging.file=/home/ubuntu/spring-boot-app.log --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d --logging.level.org.springframework=TRACE
-
+		restart_cmd = '''ssh -A ubuntu@%s -oStrictHostKeyChecking=no nohup java -Xms1024m -Xmx2048m -jar Micado-Optimizer-Test/target/file-demo-0.0.1-SNAPSHOT.jar --server.port=8080 --name="MyBean is multiplied" --server.tomcat.max-threads=%s --server.tomcat.connection-timeout=3600 --server.tomcat.accept-count=200000 --server.tomcat.keep-alive-timeout=-1 --server.tomcat.max-connections=8192 --server.tomcat.max-keep-alive-requests=-1 --server.tomcat.threads.min-spare=1 --wavefront.application.service="JVMSpring" --management.metrics.export.wavefront.api-token=a9653b2f-79ce-4ea2-9475-d5913006533d --management.endpoints.web.exposure.include=httptrace --server.tomcat.accesslog.enabled=true server.tomcat.accesslog.pattern=common server.tomcat.basedir=/home/ubuntu/ server.tomcat.accesslog.directory=logiks > /dev/null &'''
 
 		subprocess.check_output(restart_cmd%(selectedWorker, max_threads),shell=True,universal_newlines=True)
+
+		# subprocess.call(restart_cmd%(selectedWorker, max_threads),shell=True,universal_newlines=True)
 
 	print('---------------------------------------')
 	print('              FINISHED                 ')
