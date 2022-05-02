@@ -412,6 +412,18 @@ def main():
 					# 31- 78 [TCPD]OutSegs
 
 
+					# -----------------------------------------------------------
+					# Get Spring JVM Metrics from actuator/metrics
+
+					stat_spring_jvm_given_worker = getSpringStatsGiven(repWorker)
+					print('_______________________________________________________\n\n')
+					print(stat_spring_jvm_given_worker)
+
+# Todo. : ezt meg nem fejeztem be itt meg parsolni kell az adatokat
+# Todo. : illetve van az, hogy nem errol hanem az actuator/prometheus vegpontrol kerem le az adatokat de azokat is parsolni kell
+
+
+
 
 					# -----------------------------------------------------------
 					# Scaling rule
@@ -588,6 +600,15 @@ def getStats(RTs):
 	stat = {'mean': mean, 'median': median, 'minimum': minimum, 'maximum': maximum, 'std': std}
 	return stat
 
+def getSpringStatsGiven(repWorker):
+	'''Get Spring JVM Metrics from actuator/metrics'''
+
+	print('Selected worker = ', repWorker)
+
+	statcmd_spring_jvm = '''curl -s http://%s:8080/actuator/metrics'''
+
+	stat_spring_jvm_given_worker = subprocess.check_output(statcmd_spring_jvm%(repWorker),shell=True,universal_newlines=True)
+	return stat_spring_jvm_given_worker
 
 def set_init_vm_number(init_vm_number):
 	workerStatus = workerInit()
