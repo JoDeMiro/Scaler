@@ -37,3 +37,8 @@ A skáláz itt csak annyi, hogy új Workereket kapcsol be a Load Balancer Cluste
 A skálázási logika tesztelésére azonban alkalmas ez a rendszer és mivel a Workerek ki/be kapcsolaása nagyon gyors, ezért nagyon gyorsan lehet mérni rajtuk egy egy új Worker rendszerbe való kapcsolását, vagy elvételét.
 
 Tulajdonképpen ha úgy vesszük ez maga az Optimizer (infrastruktúra nélkül, annak meglétét egyébként feltételezi)
+
+A terhelést azt kívűlről szoktam generálni. Általában JMeter segítségével.
+
+Ha a LoadBalancer mögötti Web Szervereken vagy Web Szerveren fut a Java-Spring alakalmazás, és minden jól van telepítve, akkor ha egy HTTP GET Request-et
+kap a LoadBalancer akkor kisztja a kérést a Workernek és a Scaler nevü program ezt elkapja, kiolvassa a log fájlból és ha olyan a skálázási logika akkor skálázni si fog. 
