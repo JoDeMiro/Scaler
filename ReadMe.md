@@ -27,3 +27,13 @@ A használathoz viszont a következő lépésekre van szükség.
 A `pyhton3 scale_by_none.py` helyett álhat más is. Az a típus amit éppen használni szeretnék. Például a `python3 scale_by_cpu.py`
 
 Rövdiden ennyi.
+
+Mit csinál amúgy ez a program?
+
+Ez folyamatosan fut és figyeli a LoadBalanceren a log file alapján a válaszidőt. Továbbá figyeli még a Load Balancer Cluster-ba csatolt gépeken bizonyos előre beállított metrikákat (cpu, mem, io) és ezek alapján különböző típusú skálázásokat valósít meg.
+
+A skáláz itt csak annyi, hogy új Workereket kapcsol be a Load Balancer Cluster-be. De a bekapcsolás itt csak annyit jelent, hogy a már futó és a rendszerben jelen lévő Workereket ki- vagy be kapcsolja. Önmagában a Workerekkel nem csinál semmit. Tehát ha nincs elegendő számú Worker már eleve oda rakva és azok nem futnak akkor nem csinál velük semmit.
+
+A skálázási logika tesztelésére azonban alkalmas ez a rendszer és mivel a Workerek ki/be kapcsolaása nagyon gyors, ezért nagyon gyorsan lehet mérni rajtuk egy egy új Worker rendszerbe való kapcsolását, vagy elvételét.
+
+Tulajdonképpen ha úgy vesszük ez maga az Optimizer (infrastruktúra nélkül, annak meglétét egyébként feltételezi)
