@@ -10,7 +10,7 @@ import subprocess
 
 import sys,os
 
-from serverreset import restart
+from server_reset import restart
 
 
 print('---------------------------------------')

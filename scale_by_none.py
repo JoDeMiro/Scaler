@@ -10,7 +10,7 @@ import subprocess
 
 import sys,os
 
-from serverreset import restart
+from server_reset import restart
 
 print('---------------------------------------')
 print('                RESTART                ')
@@ -198,7 +198,7 @@ def main():
 				elif cts<ts or (ts[0:7]=="00:00:0" and cts[0:7]=="23:59:5"): # case when the new request timestamp has changed -> interval passed
 					rt=float(RT/N)       # calculate average rt
 					avgrt=rt
-					rr=N                 # request rate 
+					rr=N                 # request rate
 					p_95=numpy.percentile(RTs,95) # calculate percentile
 					print('--------------------------------')
 					print('len(RTs) = ', len(RTs))
@@ -213,28 +213,42 @@ def main():
 					std = RTs_array.std()
 					# print('mean = {:.2f}, med = {:.2f}, min = {:.2f}, max = {:.2f}, std = {:.2f}'.format(mean, median, minimum, maximum, std))
 
-					print("\n\n====== Average RT for ten second interval %s is %f, 95th percentile is: %f and RC is %d ======"%(cts,rt,p_95,rr))
-					cts=ts # update the interval to current timestamp
-					RT=float(matches.group(2))/1000. # reinitialize RT, N , RTs variables for next interval
-					N=1
-					RTso = RTs
-					RTs=[RT]
-				
-					# The measured values are the follow
-					# rr    = Request Rate
-					# rt    = Response Time
-					# avgrt = Average Response Time
-					# p_95  = Average Response Time for 95%
-					# cts   = Current Time Stamp
+					print('-------------------------------------')
+					print('\n\n')
+
+                                        # The measured values are the follow
+                                        # rr    = Request Rate
+                                        # rt    = Response Time
+                                        # avgrt = Average Response Time
+                                        # p_95  = Average Response Time for 95%
+                                        # cts   = Current Time Stamp
 
 					print('rr     = ', rr)
 					print('rt     =  {:.2f}'.format(rt))
 					print('p_95   =  {:.2f}'.format(p_95))
 					print('avgrt  =  {:.2f}'.format(avgrt))
 					print('cts    = ', cts)
-					print('len(RTso)', len(RTso))
+					# print('len(RTso)', len(RTso))
 					# print('RTso', RTso)
 
+					# debug
+					print('_______BEFORE_REINITIALIZATION______')
+					print('cts', cts)
+					# print('RTso', RTso)
+					# Reinitialize cuclis
+
+					cts=ts # update the interval to current timestamp
+					RT=float(matches.group(2))/1000. # reinitialize RT, N , RTs variables for next interval
+					N=1
+					RTso = RTs
+					RTs=[RT]
+
+
+					# debug
+					print('_____AFTER_REINITIALIZATION________')
+					print('cts', cts)
+					print('RTso', RTso)
+					# print('RTso', RTso)
 
 
 
@@ -265,9 +279,9 @@ def main():
 
 
 
-					# Get the metrics command					
+					# Get the metrics command
 					statcmd = '''ssh -A ubuntu@192.168.0.72 -oStrictHostKeyChecking=no tail -n 10 mylog.log | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '2-5,8-' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%f ", a[i]/NR;}}' '''
-					
+
 					statcmd_all = '''ssh -A ubuntu@192.168.0.72 -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '2-5,8-' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%f ", a[i]/NR;}}' '''
 
 					statcmd_rossz = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' '''
@@ -297,7 +311,7 @@ def main():
 					# 2 - Time
 					# 3 - [CPU:0]User%
 					# 5 - [CPU:0]Sys%
-					# 
+					#
 
 
 					# Ez az osszes metrikat visszaadja
@@ -327,7 +341,7 @@ def main():
 					# 5 - 23 - CPU1Total%
 
 					# 6 - 28 - [DSK:sda]Reads
-					# 7 - 29 - [DSK:sda]RMerge 
+					# 7 - 29 - [DSK:sda]RMerge
 					# 8 - 30 - [DSK:sda]RKBytes
 					# 9 - 31 - [DSK:sda]WaitR
 					# 10- 32 - [DSK:sda]Writes
@@ -461,14 +475,13 @@ def main():
 							#	print "Removing worker",t+1
 							removeWorker(workerStatus,repWorker,scalelog)	# remove only one worker
 							print('\n\n   removeWorker   \n\n')
-							workerStatus=workerInit()					
+							workerStatus=workerInit()
 							w=sum(workerStatus.values())
 					else:
 						timesSuggested=0 					# if neither scale out nor scale in was suggested, reset the timesSuggested
 
 
 
-					
 		except Exception as e:
 			print(line)
 			exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -502,6 +515,8 @@ def workerInit():
 		workerIP=re.search('.*http:\/\/([0-9]*.[0-9]*.[0-9]*.[0-9]*).*',line).group(1)
 		d[workerIP]=True
 	#	print(workerIP)
+
+	print('')
 	print('---------------------------------------')
 	print(d)
 	print('---------------------------------------')
@@ -515,7 +530,6 @@ def printActiveWorkers(d):
 	#	print(worker.get(0))
 	#	print(worker.get(1))
 		yield
-
 
 def getStats(RTs):
 	RTs_array = numpy.array(RTs)
@@ -574,7 +588,7 @@ def addWorker(workerStatus,scalelog):
 		scalelog.write(datetime.datetime.now().strftime("%H:%M:%S")+",\"Worker "+workerIP+" added.\"," + str(_w) + "," + str(_w_next) + "\n")
 		scalelog.flush()
 	else:
-		print('\n\n ------------- No workers left ------------- \n\n')	
+		print('\n\n ------------- No workers left ------------- \n\n')
 
 
 def removeWorker(workerStatus,repWorker,scalelog):
