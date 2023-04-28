@@ -12,7 +12,7 @@ import sys,os
 
 from server_reset import restart
 from termcolor import colored
-from deadline import printTest, printToDo
+from cooler import printTest, printToDo
 
 print('---------------------------------------')
 print('                RESTART                ')
@@ -100,11 +100,11 @@ def main():
 
 	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
 	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
-	metriclog.write('time, response_time_p95, response_time, worker_number, request_rate,')
-	metriclog.write('CPU0User%, CPU0Idle%, CPU0Total%, CPU1User%, CPU1Idle%, CPU1Total%,')
-	metriclog.write('[DSK:sda]Reads, [DSK:sda]RMerge, [DSK:sda]RKBytes, [DSK:sda]WaitR, [DSK:sda]Writes, [DSK:sda]WMerge, [DSK:sda]WKBytes, [DSK:sda]WaitW, [DSK:sda]Request, [DSK:sda]QueLen, [DSK:sda]Wait, [DSK:sda]SvcTim, [DSK:sda]Util,')
-	metriclog.write('[NUMA:0]Used, [NUMA:0]Free, [NUMA:0]Slab, [NUMA:0]Mapped, [NUMA:0]Anon, [NUMA:0]AnonH, [NUMA:0]Inactive, [NUMA:0]Hits,')
-	metriclog.write('[TCPD]InReceives, [TCPD]InDelivers, [TCPD]OutRequests, [TCPD]InSegs, [TCPD]OutSegs\n')
+	metriclog.write('time,response_time_p95,response_time,worker_number,request_rate,')
+	metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,CPU1User%,CPU1Idle%,CPU1Total%,')
+	metriclog.write('[DSK:sda]Reads,[DSK:sda]RMerge,[DSK:sda]RKBytes,[DSK:sda]WaitR,[DSK:sda]Writes,[DSK:sda]WMerge,[DSK:sda]WKBytes,[DSK:sda]WaitW,[DSK:sda]Request,[DSK:sda]QueLen,[DSK:sda]Wait,[DSK:sda]SvcTim,[DSK:sda]Util,')
+	metriclog.write('[NUMA:0]Used,[NUMA:0]Free,[NUMA:0]Slab,[NUMA:0]Mapped,[NUMA:0]Anon,[NUMA:0]AnonH,[NUMA:0]Inactive,[NUMA:0]Hits,')
+	metriclog.write('[TCPD]InReceives,[TCPD]InDelivers,[TCPD]OutRequests,[TCPD]InSegs,[TCPD]OutSegs\n')
 	metriclog.flush()
 	mlog=csv.writer(metriclog)
 
