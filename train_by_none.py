@@ -16,16 +16,16 @@ from cooler import printTest
 from cooler import printColor
 from cooler import printBlink
 
-printTest('Waazzzzzzaaaaaaaaaaaaaa')
+printTest('printTest')
 
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'cyan')
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'red')
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'green')
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'yellow')
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'blue')
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'magenta')
-printColor('Waazzzzzzaaaaaaaaaaaaaa', 'white')
-printBlink('Waazzzzzzaaaaaaaaaaaaaa', 'red')
+printColor('cyan', 'cyan')
+printColor('red', 'red')
+printColor('green', 'green')
+printColor('yellow', 'yellow')
+printColor('blue', 'blue')
+printColor('magenta', 'magenta')
+printColor('white', 'white')
+printBlink('red', 'red')
 
 
 print('---------------------------------------')
@@ -55,6 +55,9 @@ usr='ubuntu'
 log_file='zulu.log'
 init_vm_number = 1
 trigger_count = 1
+
+metric_log_file_name = './metric_train_by_none.log'
+scale_log_file_name =  './train_by_none.log'
 
 
 print('---------------------------------------')
@@ -108,7 +111,8 @@ def main():
 	accesslog=open('/var/log/apache2/'+log_file,'r')
 
 	# Ebbe fogom irni a metikakat
-	metriclog=open('./metric_train_by_none.log','w', newline='')
+	metriclog=open(metric_log_file_name,'w', newline='')
+	# metriclog=open('./metric_train_by_none.log','w', newline='')
 	# metriclog=open('./metric_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w', newline='')
 	# metriclog=open('./metric_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
 
@@ -124,7 +128,8 @@ def main():
 	mlog=csv.writer(metriclog)
 
 	# Ebbe fogom tenni a skalazasi adatokat
-	scalelog=open('./train_by_none.log','w')
+	scalelog=open(scale_log_file_name,'w')
+	# scalelog=open('./train_by_none.log','w')
 	# scalelog=open('./scale_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w')
 	# scalelog=open('./scale_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w')
 	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_number_is\n'
@@ -450,7 +455,8 @@ def main():
 
 					# mlog az mlog = csv.writer(metriclog)
                     
-					write_to_csv_time = time.time()
+					write_to_csv_time = time.strftime("%H:%M:%S", time.gmtime())
+					write_to_csv_time = datetime.datetime.now().strftime("%H:%M:%S")
 
 					mlog.writerow([write_to_csv_time, ts, p_95, rt, w]+carr) 	# add the timestamp, 95th percentile, avg rt, and number of workers to stats and log
 					# metriclog az egy open context manager

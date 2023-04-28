@@ -11,8 +11,22 @@ import subprocess
 import sys,os
 
 from server_reset import restart
+
+from cooler import printTest
+from cooler import printColor
+from cooler import printBlink
 from termcolor import colored
-from cooler import printTest, printToDo
+
+printTest('printTest')
+
+printColor('cyan', 'cyan')
+printColor('red', 'red')
+printColor('green', 'green')
+printColor('yellow', 'yellow')
+printColor('blue', 'blue')
+printColor('magenta', 'magenta')
+printColor('white', 'white')
+printBlink('red', 'red')
 
 print('---------------------------------------')
 print('                RESTART                ')
@@ -44,6 +58,8 @@ log_file='zulu.log'
 init_vm_number = 1
 trigger_count = 1
 
+metric_log_file_name = './metric_train_by_none.log'
+scale_log_file_name =  './train_by_none.log'
 
 
 print('---------------------------------------')
@@ -100,6 +116,7 @@ def main():
 
 	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
 	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
+	metriclog.write('write_to_csv_time')
 	metriclog.write('time,response_time_p95,response_time,worker_number,request_rate,')
 	metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,CPU1User%,CPU1Idle%,CPU1Total%,')
 	metriclog.write('[DSK:sda]Reads,[DSK:sda]RMerge,[DSK:sda]RKBytes,[DSK:sda]WaitR,[DSK:sda]Writes,[DSK:sda]WMerge,[DSK:sda]WKBytes,[DSK:sda]WaitW,[DSK:sda]Request,[DSK:sda]QueLen,[DSK:sda]Wait,[DSK:sda]SvcTim,[DSK:sda]Util,')
@@ -470,8 +487,11 @@ def main():
 					# print(ts, p_95, avgrt, w)
 
 					# mlog az mlog = csv.writer(metriclog)
+                    
+					write_to_csv_time = time.strftime("%H:%M:%S", time.gmtime())
+					write_to_csv_time = datetime.datetime.now().strftime("%H:%M:%S")
 
-					mlog.writerow([ts, p_95, avgrt, w]+carr) 		# add the timestamp, 95th percentile, avgrt, and number of workers to stats and log
+					mlog.writerow([write_to_csv_time, ts, p_95, avgrt, w]+carr) 	# add the timestamp, 95th percentile, avgrt, and number of workers to stats and log
 					# metriclog az egy open context manager
 					metriclog.flush()
 
