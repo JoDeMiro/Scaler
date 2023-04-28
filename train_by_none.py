@@ -56,8 +56,8 @@ log_file='zulu.log'
 init_vm_number = 1
 trigger_count = 1
 
-metric_log_file_name = './metric_train_by_none.log'
-scale_log_file_name =  './train_by_none.log'
+metric_log_file_name = './Train/metric_train_by_none.log'
+scale_log_file_name =  './Train/scaled_train_by_none.log'
 
 
 print('---------------------------------------')
