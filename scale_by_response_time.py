@@ -108,7 +108,7 @@ def main():
 	# Ebbe fogom tenni a skalazasi adatokat
 	scalelog=open('./scale_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w')
 	# scalelog=open('./scale_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w')
-	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_nuber_is\n'
+	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_number_is\n'
 	scalelog.write(scalelog_header)
 	scalelog.flush()
 

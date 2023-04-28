@@ -12,6 +12,22 @@ import sys,os
 
 from server_reset import restart
 
+from cooler import printTest
+from cooler import printColor
+from cooler import printBlink
+
+printTest('Waazzzzzzaaaaaaaaaaaaaa')
+
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'cyan')
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'red')
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'green')
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'yellow')
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'blue')
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'magenta')
+printColor('Waazzzzzzaaaaaaaaaaaaaa', 'white')
+printBlink('Waazzzzzzaaaaaaaaaaaaaa', 'red')
+
+
 print('---------------------------------------')
 print('                RESTART                ')
 print('---------------------------------------')
@@ -37,7 +53,7 @@ lb = '193.225.250.30'
 usr='ubuntu'
 # nonce='62c1d1d7-1c8a-152e-6b41-65bf544025c5'
 log_file='zulu.log'
-init_vm_number = 1
+init_vm_number = 5
 trigger_count = 1
 
 
@@ -98,11 +114,11 @@ def main():
 
 	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
 	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
-	metriclog.write('time, response_time_p95, response_time, worker_number, request_rate,')
-	metriclog.write('CPU0User%, CPU0Idle%, CPU0Total%, CPU1User%, CPU1Idle%, CPU1Total%,')
-	metriclog.write('[DSK:sda]Reads, [DSK:sda]RMerge, [DSK:sda]RKBytes, [DSK:sda]WaitR, [DSK:sda]Writes, [DSK:sda]WMerge, [DSK:sda]WKBytes, [DSK:sda]WaitW, [DSK:sda]Request, [DSK:sda]QueLen, [DSK:sda]Wait, [DSK:sda]SvcTim, [DSK:sda]Util,')
-	metriclog.write('[NUMA:0]Used, [NUMA:0]Free, [NUMA:0]Slab, [NUMA:0]Mapped, [NUMA:0]Anon, [NUMA:0]AnonH, [NUMA:0]Inactive, [NUMA:0]Hits,')
-	metriclog.write('[TCPD]InReceives, [TCPD]InDelivers, [TCPD]OutRequests, [TCPD]InSegs, [TCPD]OutSegs\n')
+	metriclog.write('time,response_time_p95,response_time,worker_number,request_rate,')
+	metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,CPU1User%,CPU1Idle%,CPU1Total%,')
+	metriclog.write('[DSK:sda]Reads,[DSK:sda]RMerge,[DSK:sda]RKBytes,[DSK:sda]WaitR,[DSK:sda]Writes,[DSK:sda]WMerge, [DSK:sda]WKBytes,[DSK:sda]WaitW,[DSK:sda]Request,[DSK:sda]QueLen,[DSK:sda]Wait,[DSK:sda]SvcTim,[DSK:sda]Util,')
+	metriclog.write('[NUMA:0]Used,[NUMA:0]Free,[NUMA:0]Slab,[NUMA:0]Mapped,[NUMA:0]Anon,[NUMA:0]AnonH,[NUMA:0]Inactive, [NUMA:0]Hits,')
+	metriclog.write('[TCPD]InReceives,[TCPD]InDelivers,[TCPD]OutRequests,[TCPD]InSegs,[TCPD]OutSegs\n')
 	metriclog.flush()
 	mlog=csv.writer(metriclog)
 
@@ -110,7 +126,7 @@ def main():
 	scalelog=open('./scale_by_none.log','w')
 	# scalelog=open('./scale_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w')
 	# scalelog=open('./scale_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w')
-	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_nuber_is\n'
+	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_number_is\n'
 	scalelog.write(scalelog_header)
 	scalelog.flush()
 
