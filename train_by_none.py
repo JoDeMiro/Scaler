@@ -38,7 +38,7 @@ print('---------------------------------------')
 print('                SET LOG                ')
 print('---------------------------------------')
 
-print_statavg_all_short = False
+print_statavg_all_short = True
 
 print('---------------------------------------')
 print('                SETUP                  ')
@@ -118,7 +118,8 @@ def main():
 
 	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
 	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
-	metriclog.write('write_to_csv_time')
+	metriclog.write('worker_give_metrics,')
+	metriclog.write('write_to_csv_time,')
 	metriclog.write('time,response_time_p95,response_time,worker_number,request_rate,')
 	metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,CPU1User%,CPU1Idle%,CPU1Total%,')
 	metriclog.write('[DSK:sda]Reads,[DSK:sda]RMerge,[DSK:sda]RKBytes,[DSK:sda]WaitR,[DSK:sda]Writes,[DSK:sda]WMerge, [DSK:sda]WKBytes,[DSK:sda]WaitW,[DSK:sda]Request,[DSK:sda]QueLen,[DSK:sda]Wait,[DSK:sda]SvcTim,[DSK:sda]Util,')
@@ -279,28 +280,35 @@ def main():
 					workerStatus=workerInit()
 					w=sum(workerStatus.values())
 
+# --------------------------------------------
+# na ezen dolgozom most
+#
+# másik parám::: biztos, hogy az elmúlt 10 időpont átlagát kérem el?
 
 					# Most az egyszeruseg miatt csak egy workerbol olvasom ki a metrikat
 					# Az utolso olyanon aki be van csatolva a terhelesbe
 					# print('________________________')
 					selectedWorker = ''
+					selectedWorkers = []
 					for k, v in workerStatus.items():
 						# print(k, v)
+						# printTest('printTest')
 						if( v == True ):
 							selectedWorker = k
+							selectedWorkers.append(k)
 					# print('------------------------')
 					# print("selectedWorker = ", selectedWorker)
 					# print('------------------------')
 
-					# Ask the metric for a given worker
+					# Ask the metric from the last worker (it can be change over time)
 					# repWorker = '192.168.0.72'
 					repWorker = selectedWorker
 					repWorkerLogin = 'ubuntu@' + repWorker
-					# print('------------------------')
-					# print("repWorker= ", repWorker)
-					# print('------------------------')
 
 
+					# Ask the metric always the same worker (should be the first wich is always on)
+					metWorker = '192.168.0.170'
+					metWorkerLogin = 'ubuntu@' + metWorker
 
 					# Get the metrics command
 					statcmd = '''ssh -A ubuntu@192.168.0.72 -oStrictHostKeyChecking=no tail -n 10 mylog.log | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '2-5,8-' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%f ", a[i]/NR;}}' '''
@@ -329,6 +337,8 @@ def main():
 
 					statcmd_all_short_avg = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%%f ", a[i]/NR;}}' '''
 
+					statcmd_all_short_ori = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]*:[0-9]*:[0-9]*' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%%f ", a[i]/NR;}}' '''
+
 
 					# 1 - Date
 					# 2 - Time
@@ -342,18 +352,28 @@ def main():
 					# statavgJO = subprocess.check_output(statcmd_all,shell=True,universal_newlines=True)
 
 					# Ha latni akarom hogy mibol kesszult az atlag
-					# statavg_all_short = subprocess.check_output(statcmd_all_short%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
 					if( print_statavg_all_short ):
-						statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorkerLogin),shell=True,universal_newlines=True)
+						# ha a repWorker (mindíg az utolsó)
+						# statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorkerLogin),shell=True,universal_newlines=True)
+						# ha a metWorker (mindíg egy általam megadott)
+						statavg_all_short = subprocess.check_output(statcmd_all_short%(metWorkerLogin),shell=True,universal_newlines=True)
 						print('_______________________________________________________\n\n')
 						print(statavg_all_short)
 
 					# A tenyleges atlag a kivalasztott metrikakra
-					# statavg_all_short = subprocess.check_output(statcmd_all_short_avg%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
-					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(repWorkerLogin),shell=True,universal_newlines=True)
+					start_time = time.time()
+					# statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(repWorkerLogin),shell=True,universal_newlines=True)
+					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(metWorkerLogin),shell=True,universal_newlines=True)
+					end_time   = time.time()
+					printTest('KI A metWorker AKITŐL LE FOGJUK KÉRNI A METRIKÁT')
+					print(metWorker)
+					print(metWorkerLogin)
+					print('get metric took: {:.3f} sec'.format(end_time - start_time))
 					if( print_statavg_all_short ):
 						print('_______________________________________________________\n\n')
 						print(statavg_all_short)
+
+
 
 					# Ebben a visszakapott stringben a metrikak a kovetkezoek
 					# 0 - 3  - CPU0User%
@@ -436,7 +456,6 @@ def main():
 					print('minimum = {:.2f}'.format(stat['minimum']))
 					print('maximum = {:.2f}'.format(stat['maximum']))
 					print('std     = {:.2f}'.format(stat['std']))
-					# print('n       = {:.2f}'.format(stat['n']))
 					print('n       = {}'.format(stat['n']))
 
 					rt = avgrt 						# average Response Time for last interval
@@ -458,7 +477,7 @@ def main():
 					write_to_csv_time = time.strftime("%H:%M:%S", time.gmtime())
 					write_to_csv_time = datetime.datetime.now().strftime("%H:%M:%S")
 
-					mlog.writerow([write_to_csv_time, ts, p_95, rt, w]+carr) 	# add the timestamp, 95th percentile, avg rt, and number of workers to stats and log
+					mlog.writerow([repWorker, write_to_csv_time, ts, p_95, rt, w]+carr) 	# add the timestamp, 95th percentile, avg rt, and number of workers to stats and log
 					# metriclog az egy open context manager
 					metriclog.flush()
 
