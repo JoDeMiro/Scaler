@@ -427,7 +427,7 @@ def main():
 
 
 					k = 0
-					rnd = np.random.rand()
+					rnd = numpy.random.rand()
 					# if( rt > rt_limit_upper ): # if response time is greater than the upper limit, consider scaling out
 					if( rnd > 0.5 ): # véletlenszerűen skáláz fel, vag le.
 
