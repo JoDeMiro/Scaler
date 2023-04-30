@@ -477,7 +477,7 @@ def main():
 					write_to_csv_time = time.strftime("%H:%M:%S", time.gmtime())
 					write_to_csv_time = datetime.datetime.now().strftime("%H:%M:%S")
 
-					mlog.writerow([repWorker, write_to_csv_time, ts, p_95, rt, w]+carr) 	# add the timestamp, 95th percentile, avg rt, and number of workers to stats and log
+					mlog.writerow([metWorker, write_to_csv_time, ts, p_95, rt, w]+carr) 	# add the timestamp, 95th percentile, avg rt, and number of workers to stats and log
 					# metriclog az egy open context manager
 					metriclog.flush()
 
@@ -522,7 +522,7 @@ def main():
 							timesSuggested=0
 							# for t in range(0,-k):
 							#	print "Removing worker",t+1
-							removeWorker(workerStatus,repWorker,scalelog)	# remove only one worker
+							removeWorker(workerStatus,metWorker,scalelog)	# remove only one worker
 							print('\n\n   removeWorker   \n\n')
 							workerStatus=workerInit()
 							w=sum(workerStatus.values())
@@ -641,13 +641,13 @@ def addWorker(workerStatus,scalelog):
 		print('\n\n ------------- No workers left ------------- \n\n')
 
 
-def removeWorker(workerStatus,repWorker,scalelog):
+def removeWorker(workerStatus,metWorker,scalelog):
 	print('\n------------ removeWorker function ----------- \n')
 	workerIP=-1
 	for worker in workerStatus:
 		print('worker  =', worker)
-		print('repWorker = ', repWorker)
-		if( workerStatus[worker] == True and worker != repWorker ):
+		print('metWorker = ', metWorker)
+		if( workerStatus[worker] == True and worker != metWorker ):
 			workerIP=worker
 			print('------------ ot fogjuk elvenni ----------- ')
 			print('workerIP = ', workerIP)
