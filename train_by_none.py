@@ -425,15 +425,20 @@ def main():
                     # A tanításhoz használt skálázás
                     # Proba.: 0.1
 
+
 					k = 0
-					if( rt > rt_limit_upper ): # if response time is greater than the upper limit, consider scaling out
+					rnd = numpy.random.rand()
+					# if( rt > rt_limit_upper ): # if response time is greater than the upper limit, consider scaling out
+					if( rnd > 0.5 ): # véletlenszerűen skáláz fel, vag le.
+
 						print('---------------------------------------')
 						print('         Testing for scale out         ')
 						print('---------------------------------------')
 
 						k+=1
 
-					if( rt < rt_limit_lower and w > 1): # if response time is less than lower limit, consider scaling in
+					# if( rt < rt_limit_lower and w > 1): # if response time is less than lower limit, consider scaling in
+					if( rnd < 0.5 and w > 1): # véletlenszerűen skáláz fel,v agy le.
 						print('---------------------------------------')
 						print('         Testing for scale in          ')
 						print('---------------------------------------')
