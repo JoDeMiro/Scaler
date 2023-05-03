@@ -77,7 +77,7 @@ print('---------------------------------------')
 print('                OPTIMIZER              ')
 print('---------------------------------------')
 
-optimizer = Optimizer()
+optimizer = Optimizer('./Train/Train05')
 
 optimizer.load_data()
 
@@ -88,33 +88,47 @@ optimizer.load_neural_net()
 # Test amit majd ki kell vennem ---------------------------------------------------------------
 # ToDo:
 # Mit ad vissza ?
+printColor('---------------------------------------------------------------------------------------', 'yellow')
+printColor('Test amit majd ki kell vennem', 'yellow')
+
 results = optimizer.calculate_rt()
 print('---------------------------------------------------------------------------------------')
+print(' results ')
 print(results)
 print('---------------------------------------------------------------------------------------')
+print(' sorted results ')
 sort_results = sorted(results, key=lambda d: d['prt'])
 print(sort_results)
 print('---------------------------------------------------------------------------------------')
 
+printColor(' Leskálázási algoirtmus', 'yellow')
 # (leskálázásnál)
+# leskálázásnál úgy kell eljárni, hogy
+# akkor hívjuk meg ha RT < LOWER_LIMIT
+# 0->-7-ig vagy ahogy most sorrendbe van rendezve
+# ha prt < UPPER_LIMIT
+# akkor k = _['action']
+# folytassa,
 results = sorted(results, key=lambda d: d['action'], reverse=True)
 for _ in results:
-	print(_['prt'])
-	k = _['action'] # arra az esetre ha mégse teljesülne sehol a feltétel
-	if _['prt'] > rt_limit_lower:
-		k = _['action']
-		break
-print('___________________ K ___________________ ', k)
-
-# (felskálázásnál)
-results = sorted(results, key=lambda d: d['action'])
-for _ in results:
-	print(_['prt'])
-	k = _['action'] # arra az esetre ha mégse teljesülne sehol a feltétel
+	print(_['action'], ' -> ', _['prt'])
 	if _['prt'] < rt_limit_upper:
 		k = _['action']
-		break
-print('___________________ K ___________________ ', k)
+print('k értéke emit kiválasztott (LESKÁLÁZÁSNÁL): ', k)
+
+# (felskálázásnál)
+# akkor hívjuk meg ha RT > UPPER_LIMIT
+# 7->0-ig irányába lépegetünk az actionon
+# ha prt > LOWER_LIMIT
+# akkor k = _['action']
+# folytassa
+results = sorted(results, key=lambda d: d['action'])
+for _ in results:
+	print(_['action'], ' -> ', _['prt'])
+	if _['prt'] > rt_limit_lower:
+		k = _['action']
+print('k értéke emit kiválasztott (FELSKÁLÁZÁSNÁL): ', k)
+printColor('Test amit majd ki kell vennem VÉGE', 'green')
 #Test vége -----------------------------------------------------------------------------------
                         
 
@@ -507,13 +521,12 @@ def main():
 						print('---------------------------------------------------------------------------------------')
 						results = sorted(results, key=lambda d: d['action'])
 						for _ in results:
-							print(_['prt'])
-							k = _['action'] # arra az esetre ha mégse teljesülne sehol a feltétel
-							if _['prt'] < rt_limit_upper:
+							print(_['action'], ' -> ', _['prt'])
+							if _['prt'] > rt_limit_lower:
 								k = _['action']
-								break
-						print('___________________ K ___________________ ', k)
+						print('___________________ K _(UP)__________________ ', k)
                         
+
 
 					if( rt < rt_limit_lower and w > 1): # if response time is less than lower limit, consider scaling in
 					# if( rnd < 0.5 and w > 1): # véletlenszerűen skáláz fel,v agy le.
@@ -532,19 +545,13 @@ def main():
 						optimizer.set_input_variables()
 
 						results = optimizer.calculate_rt(-1, max_a = 0)
-						printTest('    -----------------------------------   ')
-						print(results)
-						printTest('    +++++++++++++++++++++++++++++++++++')
 						print('---------------------------------------------------------------------------------------')
 						results = sorted(results, key=lambda d: d['action'], reverse=True)
 						for _ in results:
-							print(_['prt'])
-							k = _['action'] # arra az esetre ha mégse teljesülne sehol a feltétel
-							if _['prt'] > rt_limit_lower:
+							print(_['action'], ' -> ', _['prt'])
+							if _['prt'] < rt_limit_upper:
 								k = _['action']
-								break
-						print('___________________ K ___________________ ', k) 
-
+						print('___________________ K _(DOWN)__________________ ', k) 
 
 
 					# -----------------------------------------------------------

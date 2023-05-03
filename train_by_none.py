@@ -520,16 +520,31 @@ def main():
 								workerStatus=workerInit()
 							w=sum(workerStatus.values())
 
+                    # ez rész régen így volt megírva, s csak egyet skálázott le
+                    
+					# elif k < 0: 							# if continous suggestion to scale in, then scale in
+					#	timesSuggested+=1
+					#	print('timesSuggested in scale = ', timesSuggested)
+					#	if timesSuggested >= trigger_count: 				# control continous suggestion number here
+					#		timesSuggested=0
+					#		# for t in range(0,-k):
+					#		#	print "Removing worker",t+1
+					#		removeWorker(workerStatus,repWorker,scalelog)	# remove only one worker
+					#		print('\n\n   removeWorker   \n\n')
+					#		workerStatus=workerInit()
+					#		w=sum(workerStatus.values())
+                    
+                    # vége
+
 					elif k < 0: 							# if continous suggestion to scale in, then scale in
 						timesSuggested+=1
 						print('timesSuggested in scale = ', timesSuggested)
 						if timesSuggested >= trigger_count: 				# control continous suggestion number here
 							timesSuggested=0
-							# for t in range(0,-k):
-							#	print "Removing worker",t+1
-							removeWorker(workerStatus,metWorker,scalelog)	# remove only one worker
-							print('\n\n   removeWorker   \n\n')
-							workerStatus=workerInit()
+							for t in range(0,-k):
+								removeWorker(workerStatus,metWorker,scalelog)	# remove only one worker
+								print('\n\n   removeWorker   \n\n')
+								workerStatus=workerInit()
 							w=sum(workerStatus.values())
 					else:
 						timesSuggested=0 					# if neither scale out nor scale in was suggested, reset the timesSuggested

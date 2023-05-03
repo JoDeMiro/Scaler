@@ -41,7 +41,8 @@ tf.config.experimental.enable_op_determinism()
 
 class Optimizer():
     
-    def __init__(self):
+    def __init__(self, model_path):
+        self.model_path = model_path
         pass
     
     def load_data(self):
@@ -53,25 +54,20 @@ class Optimizer():
         
         print(df.tail())
 
-        train_log_file_name  = './Train/scaled_train_by_none.log'
-        cf = pd.read_csv(train_log_file_name, sep=',', header=0)
         
-        print('_________________________ CF _________________________')
-        
-        print(cf.tail())
+        # new
+        mf = df.copy()
 
-        cf['otime'] = cf['time']
-        cf['time'] = cf['otime'].str[:-1]
+        mf['actual_vm_number_is'] = mf['worker_number']
+        mf['actual_vm_number_was'] = mf['worker_number'].shift(1)
+        mf['actual_vm_number_will'] = mf['worker_number'].shift(-1)
 
-        mf = df.merge(cf, on='time', how='left')
-        mf['delta_vm'] = mf['actual_vm_number_is'] - mf['actual_vm_number_was']
-
-        # assert mf['worker_number'].isnull().values.any() == False
+        mf['delta_vm'] = mf['actual_vm_number_will'] - mf['actual_vm_number_is']
         
         self.mf = mf
         
         print('_________________________ MF _________________________')
-        
+
         print(mf.tail())
 
 
@@ -79,11 +75,22 @@ class Optimizer():
     def set_input_variables(self):
 
         # Set input variables
-        input_variables = ['request_rate', 'CPU0User%', '[DSK:sda]Reads', '[NUMA:0]Anon', '[NUMA:0]AnonH']
+        input_variables = ['request_rate',
+                           'CPU0User%',
+                           '[DSK:sda]Reads',
+                           '[NUMA:0]Anon',
+                           '[NUMA:0]AnonH']
+        
+        input_variables = ['request_rate',
+                           'CPU0User%',
+                           'CPU1Total%',
+                           '[DSK:sda]Reads',
+                           '[NUMA:0]Anon',
+                           '[NUMA:0]AnonH']
 
         self.train_features = self.mf[input_variables]
-        self.train_labels = self.mf[['response_time_p95']]
-        # self.train_labels = self.mf[['response_time']]
+        # self.train_labels = self.mf[['response_time_p95']]
+        self.train_labels = self.mf[['response_time']]
         
         self.input_variables = input_variables
 
@@ -97,7 +104,7 @@ class Optimizer():
 
         first_model = tf.keras.Sequential([
             normalizer,
-            tf.keras.layers.Dense(5, activation='tanh'),
+            tf.keras.layers.Dense(5, activation='ReLU'),
             tf.keras.layers.Dense(3, activation='ReLU'),
             layers.Dense(units=1)
         ])
@@ -109,8 +116,9 @@ class Optimizer():
             loss='mean_absolute_error', run_eagerly=True)
 
         # Tulikép csak ez kell
-        first_model = keras.models.load_model('./Models/nn')
-        # first_model = keras.models.load_model(os.getcwd() + '/Models/nn')
+        # first_model = keras.models.load_model('./Models/nn')
+        first_model = keras.models.load_model(self.model_path)
+        
 
         # predicted_labels = first_model.predict(self.train_features)
         
@@ -126,7 +134,6 @@ class Optimizer():
         # ideiglenesen az mf utolsó értékei lesznek a bemenők
         
         __N   = -30 if n is None else n
-        
         min_a = -7 if min_a is None else min_a
         max_a = +8 if max_a is None else max_a
         
@@ -142,55 +149,48 @@ class Optimizer():
 
         # -2. inicalizálni egy üres dictianary-t a dict(action, predicted_response_time) pároknak
         r = []; al = []; rl = []
-
+        
         __current_response_time = self.mf['response_time_p95'].values[__N]
         __last_metrics = self.mf[input_variables].values[__N]
-        __w = __last_metrics[-1]
+        __w = self.mf['worker_number'].values[__N]
 
         print('-----------------------------------------')
         print('__last_metrics -> vagyis a current values')
         print(__last_metrics)
         print('__current_rt ->')
         print(__current_response_time)
+        print('__w -> worker_number')
+        print(__w)
         print('-----------------------------------------')
         
 
         for a in A:
 
             # Ez kell, hogy a VM szám (w) ne legyen 0
-            # if __w + a != 0:
+            if __w + a != 0:
 
                 # 0.
                 # inicializálni egy üres tömböt az input_variable változónak
                 _new_train_features = np.zeros((1, self.mf[input_variables].shape[1]))
-
-                # 0.
-                # az új tömb utolsó értéke (worker_number) legyen beállítva az aktuális worker_number értékével
-                _new_train_features[0, -1] = __w
-                # helyett
-                _new_train_features[0, -1] = __w + a
-
                 
                 # 1.
                 # minden metrikára kiszámolni
-                for i, metric in enumerate(input_variables):            # A worker_number az kivétle azt majd kiszámolom
+                for i, metric in enumerate(input_variables):
                     # print(i, metric)
                     if metric != 'worker_number':
 
-# Nem szabad tanítani a model amikor tesztelem (amúgy meg be sem olvasom)
                         # 2.
                         # megcsinálni a linreg modelt az adott metrikára (tanítás)
                         __metric_term, __metric_next = self.create_term_for_metric(metric)
-                        __lr_model = self.calc_pred_for_metric(__metric_term, __metric_next)
-
+                        __lr_model = self.calc_pred_for_metric(__metric_term.values, __metric_next.values)
+                        
                         # 3.
                         # elmenetni az adott modelt
-# Nem szabad elmenteni a modelt amikor tesztelem
                         # _ = joblib.dump(__lr_model, './Models/lr/lr_' + metric + '.joblib', compress=9)
 
                         # 3.
                         # az előbbi model alapján egy becslés egy konkrét értékre (value, w, k)
-                        __metric_term = create_term_for_prediction(__last_metrics[i], __w, a)
+                        __metric_term = self.create_term_for_prediction(__last_metrics[i], __w, a)
                         # print('---a metrica értékének becsése (value, w, k alapján ---')
                         # print(__metric_term)
                         # print(metric)
@@ -207,13 +207,12 @@ class Optimizer():
                 # megvan az új a-hoz tartozó metika tömb, ez alapján becsüjük meg a válaszidőt
                 print(_new_train_features)
 
-                # 6. NN -> RT
+                # 6.
+                # a neurális háló model segítségével megbecsülöm a válaszidőt
 
                 __predicted_response_time = self.first_model.predict(_new_train_features, verbose = 0)
-
-                print(__predicted_response_time)
-
-                print(a)  # Action
+                
+                print('action = ', a, ' --> rt --> ', __predicted_response_time, '\n')
                 
                 result = {'action': a, 'prt': __predicted_response_time.flatten()[0]}
                 
@@ -235,6 +234,11 @@ class Optimizer():
 
         f1 = f1.dropna()
 
+        # Az lenne a korrekt ha kidobnám azokat ahol nem volt skálázás (delta_vm == 0)
+
+        indexAge = f1[ (f1['delta_vm'] == 0) ].index
+        f1.drop(indexAge , inplace=True)
+
         __metric_term1 = columnname + '_term1'
         __metric_term2 = columnname + '_term2'
         f1[__metric_term1] = f1[columnname] * f1['worker_number']/(f1['worker_number'] + f1['delta_vm'])
@@ -245,9 +249,11 @@ class Optimizer():
 
         return __metric_term, __metric_next
 
-# meg kéne csinálni, hogy ne kiszámolja, hanem olvassa be a modelt
+    
+    # meg kéne csinálni, hogy ne kiszámolja, hanem olvassa be a modelt
     def calc_pred_for_metric_learned(self, __metric, __metric_term, __metrix_next):
         pass
+    
     
     def calc_pred_for_metric(self, __metric_term, __metric_next):
 
@@ -263,37 +269,14 @@ class Optimizer():
 
         return rr
 
+    
+    def create_term_for_prediction(self, value: float, w: int, k: int):
+    
+        __metric_term1 = value * w/(w+k)
+        __metric_term2 = value * k/(w+k)
 
-# ----------------------------
+        __metric_term = np.array([[__metric_term1, __metric_term2]])
 
-def create_term_for_metric(self, columnname: str):
-    
-    f1 = self.mf.copy()
-    __next_name = columnname + 'Next'
-    __prev_name = columnname + 'Prev'
-
-    f1[__next_name] = f1[columnname].shift(-1)
-    f1[__prev_name] = f1[columnname].shift(+1)
-    
-    f1 = f1.dropna()
-    
-    __metric_term1 = columnname + '_term1'
-    __metric_term2 = columnname + '_term2'
-    f1[__metric_term1] = f1[columnname] * f1['worker_number']/(f1['worker_number'] + f1['delta_vm'])
-    f1[__metric_term2] = f1[columnname] * f1['delta_vm']/(f1['worker_number'] + f1['delta_vm'])
-    
-    __metric_term = f1[[__metric_term1, __metric_term2]]
-    __metric_next = f1[__next_name]
-    
-    return __metric_term, __metric_next
-
-def create_term_for_prediction(value: float, w: int, k: int):
-    
-    __metric_term1 = value * w/(w+k)
-    __metric_term2 = value * k/(w+k)
-    
-    __metric_term = np.array([[__metric_term1, __metric_term2]])
-    
-    return __metric_term
+        return __metric_term
 
 
