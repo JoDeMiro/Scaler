@@ -1,0 +1,1 @@
+Ez a /cpu/count/10 REST API mérése

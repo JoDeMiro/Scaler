@@ -49,6 +49,10 @@ url = 'http://127.0.0.1/balancer-manager'
 r = requests.get(url)
 nonce = re.search(r'nonce=(.*?)">', r.text).group(1)
 
+metricWorker = '192.168.0.170'
+
+VCPU = 1 # A metrika gépen a VCPU száma
+
 lb = '193.225.250.30'
 usr='ubuntu'
 # nonce='62c1d1d7-1c8a-152e-6b41-65bf544025c5'
@@ -101,8 +105,6 @@ def main():
 	set_init_vm_number(init_vm_number)
 
 
-
-
 	print('---------------------------------------')
 	print('                  MAIN                 ')
 	print('---------------------------------------')
@@ -118,7 +120,10 @@ def main():
 	# (idopont, response_time_95, response_time, worker_number, request_rate, metrics)
 	metriclog.write('write_to_csv_time')
 	metriclog.write('time, response_time_p95,response_time,worker_number,request_rate,')
-	metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,CPU1User%,CPU1Idle%,CPU1Total%,')
+	if VCPU == 1:
+		metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,')
+	if VCPU == 2:
+		metriclog.write('CPU0User%,CPU0Idle%,CPU0Total%,CPU1User%,CPU1Idle%,CPU1Total%,')
 	metriclog.write('[DSK:sda]Reads,[DSK:sda]RMerge,[DSK:sda]RKBytes,[DSK:sda]WaitR,[DSK:sda]Writes,[DSK:sda]WMerge,[DSK:sda]WKBytes,[DSK:sda]WaitW,[DSK:sda]Request,[DSK:sda]QueLen,[DSK:sda]Wait,[DSK:sda]SvcTim,[DSK:sda]Util,')
 	metriclog.write('[NUMA:0]Used,[NUMA:0]Free,[NUMA:0]Slab,[NUMA:0]Mapped,[NUMA:0]Anon,[NUMA:0]AnonH,[NUMA:0]Inactive,[NUMA:0]Hits,')
 	metriclog.write('[TCPD]InReceives,[TCPD]InDelivers,[TCPD]OutRequests,[TCPD]InSegs,[TCPD]OutSegs\n')
@@ -277,45 +282,49 @@ def main():
 					# repWorker = '192.168.0.72'
 					repWorker = selectedWorker
 					repWorkerLogin = 'ubuntu@' + repWorker
-					# print('------------------------')
-					# print("repWorker= ", repWorker)
-					# print('------------------------')
 
+					# Ask the metric always the same worker (should be the first wich is always on)
+					metWorker = '192.168.0.170'
+					metWorker = metricWorker
+					metWorkerLogin = 'ubuntu@' + metWorker
 
-
-					# Get the metrics command					
+					# Get the metrics command
 					statcmd = '''ssh -A ubuntu@192.168.0.72 -oStrictHostKeyChecking=no tail -n 10 mylog.log | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '2-5,8-' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%f ", a[i]/NR;}}' '''
-					
+
 					statcmd_all = '''ssh -A ubuntu@192.168.0.72 -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '2-5,8-' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%f ", a[i]/NR;}}' '''
-
-					statcmd_rossz = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' '''
-
-					statcmd_rossz = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' '''
-
-					statcmd_rossz = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' '''
 
 					statcmd_ido = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '1,2' '''
 
-					statcmd_cpu = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23' '''
+					statcmd_all_short_2VCPU     = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' '''
 
-					statcmd_hdd = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '28-40' '''
+					statcmd_all_short_avg_2VCPU = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%%f ", a[i]/NR;}}' '''
 
-					statcmd_ram = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '41-48' '''
+					statcmd_all_short_ori_2VCPU = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]*:[0-9]*:[0-9]*' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%%f ", a[i]/NR;}}' '''
 
-					statcmd_tcp = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '49-117' '''
+					statcmd_all_short_1VCPU     = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,16-28,29-36,39,45,46,65,66' '''
 
-					statcmd_tcp_short = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '51,57,58,77,78' '''
+					statcmd_all_short_avg_1VCPU = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,16-28,29-36,39,45,46,65,66' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%%f ", a[i]/NR;}}' '''
 
-					statcmd_all_short     = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' '''
 
-					statcmd_all_short_avg = '''ssh -A %s -oStrictHostKeyChecking=no 'tail -n 10 mylog.log' | grep '[0-9]' | sed 's/ \+/ /g' | cut -d ' ' -f '3,10,11,15,22,23,28-40,41-48,51,57,58,77,78' | awk '{for (i=1;i<=NF;i++){a[i]+=$i;}} END {for (i=1;i<=NF;i++){printf "%%f ", a[i]/NR;}}' '''
-
+					# Természetesen ha Több VCPU van akkor elcsúszik az egész számozás és rossz lesz az egész (!)
+                    
+					if VCPU == 1:
+						statcmd_all_short     = statcmd_all_short_1VCPU
+						statcmd_all_short_avg = statcmd_all_short_avg_1VCPU
+					elif VCPU == 2:
+						statcmd_all_short     = statcmd_all_short_2VCPU
+						statcmd_all_short_avg = statcmd_all_short_avg_2VCPU
+					else:
+						break
+                    
 
 					# 1 - Date
 					# 2 - Time
 					# 3 - [CPU:0]User%
 					# 5 - [CPU:0]Sys%
-					# 
+					#
+                    
+					# Természetesen ha Több VCPU van akkor elcsúszik az egész számozás és rossz lesz az egész (!)
 
 
 					# Ez az osszes metrikat visszaadja
@@ -323,15 +332,15 @@ def main():
 					# statavgJO = subprocess.check_output(statcmd_all,shell=True,universal_newlines=True)
 
 					# Ha latni akarom hogy mibol kesszult az atlag
-					# statavg_all_short = subprocess.check_output(statcmd_all_short%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
 					if( print_statavg_all_short ):
-						statavg_all_short = subprocess.check_output(statcmd_all_short%(repWorkerLogin),shell=True,universal_newlines=True)
+						statavg_all_short = subprocess.check_output(statcmd_all_short%(metWorkerLogin),shell=True,universal_newlines=True)
 						print('_______________________________________________________\n\n')
 						print(statavg_all_short)
 
 					# A tenyleges atlag a kivalasztott metrikakra
-					# statavg_all_short = subprocess.check_output(statcmd_all_short_avg%("ubuntu@192.168.0.72"),shell=True,universal_newlines=True)
-					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(repWorkerLogin),shell=True,universal_newlines=True)
+					statavg_all_short = subprocess.check_output(statcmd_all_short_avg%(metWorkerLogin),shell=True,universal_newlines=True)
+					printTest('KI A metWorker AKITŐL LE FOGJUK KÉRNI A METRIKÁT')
+					print(metWorker, metWorkerLogin)
 					if( print_statavg_all_short ):
 						print('_______________________________________________________\n\n')
 						print(statavg_all_short)
