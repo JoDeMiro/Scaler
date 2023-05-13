@@ -20,7 +20,7 @@ def printToDo(value):
 	print(colored('---------------------------------------', 'cyan'))
 
 def printColor(text, color):
-    
+
 	print(colored('---------------------------------------', color))
 
 	print(colored(text, color))
@@ -29,7 +29,7 @@ def printColor(text, color):
 
 
 def printBlink(text, color):
-    
+
 	print(colored('---------------------------------------', color))
 
 	print(colored(text, color, attrs=["reverse", "blink"]))
