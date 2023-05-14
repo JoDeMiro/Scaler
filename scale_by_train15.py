@@ -1,9 +1,11 @@
 # scale_by_none.py
 
+import os
 import re
 import csv
 import time
 import numpy
+import pickle
 import datetime
 import requests
 import subprocess
@@ -26,6 +28,17 @@ printColor('blue', 'blue')
 printColor('magenta', 'magenta')
 printColor('white', 'white')
 printBlink('red', 'red')
+
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from termcolor import colored
+
+from sklearn.linear_model import LinearRegression
+
+
 
 
 print('---------------------------------------')
@@ -60,8 +73,21 @@ log_file='zulu.log'
 init_vm_number = 1
 trigger_count = 1
 
-metric_log_file_name = './Train/metric_train_by_none.log'
-scale_log_file_name =  './Train/scaled_train_by_none.log'
+metric_log_file_name = './Optimizer/metric_train_by_15_after_trained.log'
+scale_log_file_name =  './Optimizer/scaled_train_by_15_after_trained.log'
+
+
+# ----------------------------------------------------------------------
+# melyik train folder
+trained_folder = '/Train/Train15/'
+# melyik train file
+trained_metric_file_name = './Train/Train15/metric_train_by_none.log'
+# mik az input változók (egyeznie kell a betöltött neurális hálóval)
+input_variables = ['request_rate', 'CPU0User%', '[TCPD]OutSegs']
+
+MIN_VM = 1
+MAX_VM = 9
+# ----------------------------------------------------------------------
 
 
 print('---------------------------------------')
@@ -93,8 +119,223 @@ def follow(thefile):
 		# print(line)
 		yield line
 
+def read_trained_csv(trained_metric_file_name):
+	df = pd.read_csv(trained_metric_file_name, sep=',', header=0)
+	# df.head()
+	# ebből csak az utolsó sor kell
+	last_df = df.iloc[[-1]]
+	return last_df
+
+def get_current_worker_number(last_df):
+	# worker az kell a számításokhoz
+	current_worker_number = last_df['worker_number'].values[0]
+	return current_worker_number
+
+def get_train_features(last_df, input_variables):
+	# csak azok az oszlop kellenek amelyek bemenetei a neurális hálónak
+	train_features = last_df[input_variables]
+	train_features.head()
+	print(train_features)
+	return train_features
+
+def load_tf_model(trained_folder):
+	model = keras.models.load_model(os.getcwd() + trained_folder)
+	return model
+
+def pred_rt(model, train_features):
+	predicted_labels = model.predict(train_features)
+	return predicted_labels
+
+def get_last_df_info(last_df):
+	# pár egyéb dolgot ellenőrzéshez kiolvasok
+	wcsv = last_df['write_to_csv_time']
+	tper = last_df['time']
+	c_rt = last_df['response_time']
+	print(colored('wcsv -> \t' + str(wcsv), 'red'))
+	print(colored('tper -> \t' + str(tper), 'red'))
+	print(colored('c_rt -> \t' + str(c_rt), 'red'))
+
+
+# ------------------------------------------------
+# get_advice
+# függvényhez szükséges függvéynek
+
+def create_term_for_prediction(value: float, w: int, k: int):
+	__metric_term1 = value * w/(w+k)
+	__metric_term2 = value * k/(w+k)
+	__metric_term = np.array([[__metric_term1, __metric_term2]])
+	return __metric_term
+
+def get_advice(w, train_features, model, scale=None):
+	print(MIN_VM, MAX_VM)
+	MAX = MAX_VM - w + 1
+	MIN = MIN_VM - w
+	# A = [x for x in range(MIN, MAX)]
+	if scale == 'OUT':
+		A = [x for x in range(1, MAX)]
+	if scale == 'IN':
+		A = [x for x in range(MIN, 0)]
+	print(A)
+
+	print('---------------------------------------')
+	print('train_features -> azaz current metrics ')
+	with np.printoptions(precision=2, suppress=True):
+		print(train_features)
+	print('---------------------------------------')
+
+    
+    
+	# Pandas.Series -> nd.array
+	train_features = train_features.values
+	train_features = train_features[0]
+	print('train_features ......', train_features)
+
+	# aps ebbe pakolom az [a, __predicted_response_time] értékeket
+	aps = []   
+    
+	for a in A:
+
+		# 0.
+		# inicializálni egy üres tömböt az input_variable változónak
+		_new_train_features = np.zeros((1, train_features.shape[0]))
+        
+		# 1.
+		# minden metrikára kiszámolni
+		for i, metric in enumerate(input_variables):
+			print(i, metric)
+			if metric != 'worker_number':
+            
+                # Systematicly load
+                # Minden egyes alkalommal betölteni elég nagy luxus de most így hagyom (később pedig kiszervezem egy külön
+                # függvénybe és az elején beolvasom, letárolom őket egy listában aztán onnan töltöm be de most itt hagyom)
+				f = 'lr/'
+				f = os.getcwd() + trained_folder + f
+				print('----------------------- pickle folder', f)
+                # file name, I'm using *.pickle as a file extension
+				filename = f + str(metric) + '.pickle'
+                # load model
+				__lr_model = pickle.load(open(filename, "rb"))
+				print(__lr_model.coef_, __lr_model.intercept_)
+
+				feature = train_features[i]
+				#print(feature)
+
+				# 3.
+				# az előbbi model alapján egy becslés egy konkrét értékre (value, w, k)
+				print(f'feature: {feature} w: {w} a: {a}')
+				__metric_term = create_term_for_prediction(feature, w, a)
+                
+				# print('---a metrica értékének becsése (value, w, k alapján ---')
+				# print(__metric_term.shape)
+				# __metric_term  = np.squeeze(__metric_term, -1)
+                
+				__pred_metric = __lr_model.predict(__metric_term)
+
+				# 4.
+				# adott becsült metrikát bele kell helyezni a neurális háló bemeneti változójához
+				_new_train_features[0, i] = __pred_metric
+
+		# 5.
+		# megvan az új a-hoz tartozó metika tömb, ez alapján becsüjük meg a válaszidőt
+		with np.printoptions(precision=2, suppress=True):
+			print(_new_train_features)
+                
+		# 6.
+		# a neurális háló model segítségével megbecsülöm a válaszidőt
+		__predicted_response_time = model.predict(_new_train_features, verbose = 0)
+
+		with np.printoptions(precision=2, suppress=True):
+			print('action = ', a, ' --> rt --> ', __predicted_response_time, '\n')
+
+		aps.append([a, __predicted_response_time.flatten()[0]])
+
+	return aps
+
+def chose_action(aps):
+	# Keressük meg hol a legjobb a becslés
+	# fps = pd.DataFrame(aps, columns=['delta_vm', 'pred_rt'])
+	# fps
+
+	# Kerresük meg hoa legjobb a becslés
+	UPPER_LIMIT = 90
+	LOWER_LIMIT = 30
+
+	chosen_delta_vm_out = 19
+	chosen_delta_vm_in  = -20
+	for row in aps:
+		print(row)
+		print(row[1])
+		if row[1] < UPPER_LIMIT:
+			chosen_delta_vm_out = row[0]
+			print(chosen_delta_vm_out)
+			break
+
+	print(chosen_delta_vm_out)
+	print(chosen_delta_vm_in)
+
 
 def main():
+    
+	print('---------------------------------------')
+	print('                TEST DB                ')
+	print('---------------------------------------')
+    
+	last_df = read_trained_csv(trained_metric_file_name)
+
+	print('---------------------------------------')
+	print('                TEST TF                ')
+	print('---------------------------------------')
+    
+	train_features = get_train_features(last_df, input_variables)
+
+	print('---------------------------------------')
+	print('                TEST WN                ')
+	print('---------------------------------------')
+
+	current_worker_number = get_current_worker_number(last_df)
+
+	print('---------------------------------------')
+	print('                TEST IN                ')
+	print('---------------------------------------')
+
+	get_last_df_info(last_df)
+    
+	print('---------------------------------------')
+	print('                TEST NN                ')
+	print('---------------------------------------')
+    
+	model = load_tf_model(trained_folder)
+
+	print('---------------------------------------')
+	print('                TEST PR                ')
+	print('---------------------------------------')
+    
+	predicted_labels = pred_rt(model, train_features)
+	print(predicted_labels)
+
+	print('---------------------------------------')
+	print('                TEST AD                ')
+	print('---------------------------------------')
+
+	# aps = get_advice(w = 3, train_features = train_features, model = model, scale = 'OUT')
+	aps = get_advice(w = current_worker_number, train_features = train_features, model = model, scale = 'OUT')
+
+	print('---------------------------------------')
+	print('                TEST CA                ')
+	print('---------------------------------------')
+
+	chose_action(aps)
+    
+    # ------------------------------------------------------------------------------ ITT TARTOK 2023.05.15 00:15
+    # ezt a függvényt tesztelni kell a notebookban ismét több beállítással hogy jó értéked ad-e vissza
+    # továbbá megszínezni ezeket a részeket
+
+	print('---------------------------------------')
+	print('                TEST VARIABLES         ')
+	print('---------------------------------------')
+
+	print(train_features)
+	print(current_worker_number)
 
 
 	print('---------------------------------------')
