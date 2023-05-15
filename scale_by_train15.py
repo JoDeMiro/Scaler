@@ -18,6 +18,8 @@ from cooler import printTest
 from cooler import printColor
 from cooler import printBlink
 
+from termcolor import colored
+
 printTest('printTest')
 
 printColor('cyan', 'cyan')
@@ -28,6 +30,18 @@ printColor('blue', 'blue')
 printColor('magenta', 'magenta')
 printColor('white', 'white')
 printBlink('red', 'red')
+
+print(colored('---------------------------------------', 'yellow'))
+print(colored('---------------------------------------', 'red'))
+print(colored('---------------------------------------', 'blue'))
+print(colored('---------------------------------------', 'green'))
+print(colored('---------------------------------------', 'magenta'))
+print(colored('---------------------------------------', 'cyan'))
+
+print(colored('--------------', color='red', on_color='on_grey'))
+print(colored('--------------', color='red', on_color='on_grey', attrs=['bold']))
+print(colored('--------------', color='red', on_color='on_grey', attrs=['bold', 'reverse']))
+print(colored('--------------', color='red', on_color='on_grey', attrs=['bold', 'concealed']))
 
 import numpy as np
 import pandas as pd
@@ -62,7 +76,7 @@ url = 'http://127.0.0.1/balancer-manager'
 r = requests.get(url)
 nonce = re.search(r'nonce=(.*?)">', r.text).group(1)
 
-metricWorker = '192.168.0.170'
+metricWorker = '192.168.0.6'
 
 VCPU = 1 # A metrika gépen a VCPU száma
 
@@ -92,8 +106,8 @@ MAX_VM = 9
 
 print('---------------------------------------')
 print('                CONFIG                 ')
-rt_limit_upper = 500
-rt_limit_lower = 200
+RT_LIMIT_UPPER = 500
+RT_LIMIT_LOWER = 200
 # cpu_limit_upper = 70
 # cpu_limit_lower = 40
 print('---------------------------------------')
@@ -182,8 +196,6 @@ def get_advice(w, train_features, model, scale=None):
 	with np.printoptions(precision=2, suppress=True):
 		print(train_features)
 	print('---------------------------------------')
-
-    
     
 	# Pandas.Series -> nd.array
 	train_features = train_features.values
@@ -251,27 +263,64 @@ def get_advice(w, train_features, model, scale=None):
 
 	return aps
 
-def chose_action(aps):
+def chose_action(aps, scale):
 	# Keressük meg hol a legjobb a becslés
 	# fps = pd.DataFrame(aps, columns=['delta_vm', 'pred_rt'])
 	# fps
+	print(colored('---------------------------------------', 'cyan'))
+	print(colored('RT_LIMIT_UPPER  ' + str(RT_LIMIT_UPPER) , 'cyan'))
+	print(colored('RT_LIMIT_LOWER  ' + str(RT_LIMIT_LOWER) , 'cyan'))
+	print(colored('---------------------------------------', 'cyan'))
 
 	# Kerresük meg hoa legjobb a becslés
 	UPPER_LIMIT = 90
 	LOWER_LIMIT = 30
+	UPPER_LIMIT = RT_LIMIT_UPPER
+	LOWER_LIMIT = RT_LIMIT_LOWER
 
 	chosen_delta_vm_out = 19
 	chosen_delta_vm_in  = -20
-	for row in aps:
-		print(row)
-		print(row[1])
-		if row[1] < UPPER_LIMIT:
-			chosen_delta_vm_out = row[0]
-			print(chosen_delta_vm_out)
-			break
+    
+	chosen_delta_vm = None
 
+	# scale out (felfelés skálázás)
+	if scale == 'OUT':
+		print('SCALE OUT')
+		for row in aps:
+			print(row)
+			print(row[1])
+			if row[1] < UPPER_LIMIT:
+				chosen_delta_vm_out = row[0]
+				print(chosen_delta_vm_out)
+				break
+		chosen_delta_vm = chosen_delta_vm_out
+
+	# scale in (lefelés skálázás)
+	if scale == 'IN':
+		print('SCALE IN')
+		for row in aps:
+			print(row)
+			print(row[1])
+			if row[1]  < UPPER_LIMIT:
+				chosen_delta_vm_in = row[0]
+				print(chosen_delta_vm_in)
+				break
+		chosen_delta_vm = chosen_delta_vm_in
+
+	print(colored('---------------------------------------', 'cyan'))
 	print(chosen_delta_vm_out)
 	print(chosen_delta_vm_in)
+	print(chosen_delta_vm)
+	print(colored('---------------------------------------', 'cyan'))
+
+	return chosen_delta_vm
+
+def read_metric_csv(metric_log_file_name):
+	df = pd.read_csv(metric_log_file_name, sep=',', header=0)
+	# df.head()
+	# ebből csak az utolsó sor kell
+	last_df = df.iloc[[-1]]
+	return last_df
 
 
 def main():
@@ -324,11 +373,9 @@ def main():
 	print('                TEST CA                ')
 	print('---------------------------------------')
 
-	chose_action(aps)
+	chosen_delta_vm = chose_action(aps, scale = 'OUT')
     
-    # ------------------------------------------------------------------------------ ITT TARTOK 2023.05.15 00:15
-    # ezt a függvényt tesztelni kell a notebookban ismét több beállítással hogy jó értéked ad-e vissza
-    # továbbá megszínezni ezeket a részeket
+    # ------------------------------------------------------------------------------ ITT TARTOK 2023.05.15 19:03
 
 	print('---------------------------------------')
 	print('                TEST VARIABLES         ')
@@ -356,7 +403,7 @@ def main():
 	# Ebbe fogom irni a metikakat
 	metriclog=open(metric_log_file_name,'w', newline='')
 	# metriclog=open('./metric_train_by_none.log','w', newline='')
-	# metriclog=open('./metric_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w', newline='')
+	# metriclog=open('./metric_rt_threshold%i_%i.log'%(RT_LIMIT_LOWER,RT_LIMIT_UPPER),'w', newline='')
 	# metriclog=open('./metric_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w', newline='')
 
 	# Ebben a sorrendben irom bele a metric.log-ba az adatokat
@@ -377,7 +424,7 @@ def main():
 	# Ebbe fogom tenni a skalazasi adatokat
 	scalelog=open(scale_log_file_name,'w')
 	# scalelog=open('./train_by_none.log','w')
-	# scalelog=open('./scale_rt_threshold%i_%i.log'%(rt_limit_lower,rt_limit_upper),'w')
+	# scalelog=open('./scale_rt_threshold%i_%i.log'%(RT_LIMIT_LOWER,RT_LIMIT_UPPER),'w')
 	# scalelog=open('./scale_cpu_threshold%i_%i.log'%(cpu_limit_lower,cpu_limit_upper),'w')
 	scalelog_header = 'time,notification,actual_vm_number_was,actual_vm_number_is\n'
 	scalelog.write(scalelog_header)
@@ -617,6 +664,13 @@ def main():
 						print('_______________________________________________________\n\n')
 						print(statavg_all_short)
 
+					print(colored('---------------------------------------', 'cyan'))
+					print(colored('EZEN A PONTON EL VAN KÉRVE A METRIKA   ', 'cyan'))
+					print(colored('---------------------------------------', 'cyan'))
+					print(statavg_all_short)
+                    
+					__start_time = time.time()
+
 					# Ebben a visszakapott stringben a metrikak a kovetkezoek
 					# 0 - 3  - CPU0User%
 					# 1 - 10 - CPU0Idle%
@@ -670,7 +724,7 @@ def main():
 
 					k = 0
 					rnd = numpy.random.rand()
-					# if( rt > rt_limit_upper ): # if response time is greater than the upper limit, consider scaling out
+					# if( rt > RT_LIMIT_UPPER ): # if response time is greater than the upper limit, consider scaling out
 					if( rnd > 0.5 ): # véletlenszerűen skáláz fel, vag le.
 
 						print('---------------------------------------')
@@ -689,7 +743,7 @@ def main():
                         
                         
 
-					# if( rt < rt_limit_lower and w > 1): # if response time is less than lower limit, consider scaling in
+					# if( rt < RT_LIMIT_LOWER and w > 1): # if response time is less than lower limit, consider scaling in
 					if( rnd < 0.5 and w > 1): # véletlenszerűen skáláz fel,v agy le.
 						print('---------------------------------------')
 						print('         Testing for scale in          ')
@@ -747,6 +801,59 @@ def main():
 					# metriclog az egy open context manager
 					metriclog.flush()
 
+					__end_time = time.time()
+					__met_time = __end_time - __start_time
+
+					print(colored('---------------------------------------', 'cyan'))
+					print(colored('ENNYI IDŐBE TELT KIIRNI A METRIKÁKAT   ', 'cyan'))
+					print(colored(__met_time, 'cyan'))
+					print(colored('---------------------------------------', 'cyan'))
+                    
+                    # Most kiszámolom a k értékét
+                    #
+                    # Korábban is megtettem, de most a metrikák alapján az ML segítségével
+                    
+                    # 1
+                    # --> olvassuk ki a metrika filéből a szükséges adatokat
+					last_metric_df = read_metric_csv(metric_log_file_name)
+					print(last_metric_df)
+                    #
+                    # 2
+                    # --> ez alapján mi a current_worker_number (by the way ezt máshonnan is megtudhatnám)
+					current_worker_number = get_current_worker_number(last_metric_df)
+					print(current_worker_number)
+                    #
+                    # 3
+                    # --> előállítani a pred_feature-oket
+					pred_features = get_train_features(last_metric_df, input_variables)
+					print(pred_features)
+                    #
+                    # 4
+                    # --> pred_features alapján megcsinálni az a/lr/nn becslést
+                    #
+                    # --> kiviből megnézem, hogy a pred
+                    #
+                    #     ez azt jelenti, hogy a jelenlegi értékek alapján ilyen becslést adna RT-re a háló
+                    #
+                    #     olyan minthhta (a = 0) lenne
+
+					predicted_labels = pred_rt(model, pred_features)
+					print(predicted_labels)
+					print(colored('---------------------------------------', 'cyan'))
+
+                    #
+                    # 5
+                    # --> kiszámolom a lehetséges a-kra a metrikákat
+                    #
+                    # --> ellenőrzés
+					print(current_worker_number)
+					aps = get_advice(w = current_worker_number, train_features = pred_features, model = model, scale = 'OUT')
+					print(colored('---------------------------------------', 'cyan'))
+
+
+
+
+
 
 
 					# Ok Log file is ki van irva benne van minden amit akarok
@@ -764,8 +871,8 @@ def main():
 					print('Actual Worker Number      = ', w)
 					print('k (Control the action)    = ', k)
 					print('Response Time             =  {:.2f}'.format(rt))
-					print('Response Time Upper Limit = ', rt_limit_upper)
-					print('Response Time Lower Limit = ', rt_limit_lower)
+					print('Response Time Upper Limit = ', RT_LIMIT_UPPER)
+					print('Response Time Lower Limit = ', RT_LIMIT_LOWER)
 
 
 					if k > 0: 								# if continous suggestion of scale out then scale out
