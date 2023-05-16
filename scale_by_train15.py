@@ -374,8 +374,6 @@ def main():
 	print('---------------------------------------')
 
 	chosen_delta_vm = chose_action(aps, scale = 'OUT')
-    
-    # ------------------------------------------------------------------------------ ITT TARTOK 2023.05.15 19:03
 
 	print('---------------------------------------')
 	print('                TEST VARIABLES         ')
@@ -718,46 +716,7 @@ def main():
 					_cpu_idle  = float(statavg_all_short.split()[1])
 					_cpu_total = float(statavg_all_short.split()[2])
                     
-                    # A tanításhoz használt skálázás
-                    # Proba.: 0.1
 
-					k = 0
-					rnd = numpy.random.rand()
-					# if( rt > RT_LIMIT_UPPER ): # if response time is greater than the upper limit, consider scaling out
-					if( rnd > 0.5 ): # véletlenszerűen skáláz fel, vag le.
-
-						print('---------------------------------------')
-						print('         Testing for scale out         ')
-						print('---------------------------------------')
-
-                        # Csak egyet adunk hozzá (fix)
-						# k+=1
-                        
-                        # Random
-						rnd1 = numpy.random.rand()
-						delta = 1 if rnd1 < 0.5 else 2
-						delta = 1 if rnd1 < 0.33 else 2 if rnd1 < 0.66 else 3
-						k += delta
-						print('-------------------------UP-------------------------------------------> k =', k)
-                        
-                        
-
-					# if( rt < RT_LIMIT_LOWER and w > 1): # if response time is less than lower limit, consider scaling in
-					if( rnd < 0.5 and w > 1): # véletlenszerűen skáláz fel,v agy le.
-						print('---------------------------------------')
-						print('         Testing for scale in          ')
-						print('---------------------------------------')
-
-
-                        # Csak egyet veszünk el (fix)
-						# k-=1
-                        
-                        # Random
-						rnd1 = numpy.random.rand()
-						delta = 1 if rnd1 < 0.5 else 2
-						delta = 1 if rnd1 < 0.33 else 2 if rnd1 < 0.66 else 3
-						k -= delta
-						print('-------------------------LE-------------------------------------------> k =', k)
 
 					# -----------------------------------------------------------
 					# Log to file
@@ -851,19 +810,76 @@ def main():
 					print(predicted_labels)
 					print(colored('---------------------------------------', 'cyan'))
 
+                    # A tényleges futásnál használt skálázás
+                    # Proba.: 0.1
                     #
+                    
                     # 5
                     # --> kiszámolom a lehetséges a-kra a metrikákat
                     #
-                    # --> ellenőrzés
-					print(current_worker_number)
-					aps = get_advice(w = current_worker_number, train_features = pred_features, model = model, scale = 'OUT')
-					print(colored('---------------------------------------', 'cyan'))
-                    #
-                    # Na ez a fenti rész az (5) az ami bekerülhet a skálázáshoz
-                    #
-                    
 
+					k = 0
+					if( rt > RT_LIMIT_UPPER ): # if response time is greater than the upper limit, consider scaling out
+                        
+						print('---------------------------------------')
+						print('         Testing for scale out         ')
+						print('---------------------------------------')
+                        
+                        # --> ellenőrzés
+						print(current_worker_number)
+						aps = get_advice(w = current_worker_number, train_features = pred_features, model = model, scale = 'OUT')
+						print(colored('---------------------------------------', 'cyan'))
+
+                        # Csak egyet adunk hozzá (fix)
+						# k += 1
+                        
+                        # Kiértékelem az advisert
+						chosen_delta_vm = chose_action(aps, scale = 'OUT')
+						print(colored('+++________________+++', 'cyan'))
+						print(colored(str(chosen_delta_vm), 'cyan'))
+						print(colored('+++________________+++', 'cyan'))
+                        
+                        # Az adviser által adott értékkel növeljük
+						k += chosen_delta_vm
+                        
+						print('-------------------------UP-------------------------------------------> k =', k)
+
+					if( rt < RT_LIMIT_LOWER and w > 1): # if response time is less than lower limit, consider scaling in
+                        
+						print('---------------------------------------')
+						print('         Testing for scale in          ')
+						print('---------------------------------------')
+                        
+                        # --> ellenőrzés
+						print(current_worker_number)
+						aps = get_advice(w = current_worker_number, train_features = pred_features, model = model, scale = 'IN')
+						print(colored('---------------------------------------', 'cyan'))
+
+                        # Csak egyet veszünk el (fix)
+						# k -= 1
+
+                        # Kiértékelem az advisert
+						chosen_delta_vm = chose_action(aps, scale = 'IN')
+						print(colored('+++________________+++', 'cyan'))
+						print(colored(str(chosen_delta_vm), 'cyan'))
+						print(colored('+++________________+++', 'cyan'))
+                        
+                        # Az adviser által adott értékkel növeljük
+                        # (!)
+						# k -= chosen_delta_vm # helyett -> mert chosen_delta_vm az negatív (pl. -3)
+						k += chosen_delta_vm
+                        
+						print('-------------------------LE-------------------------------------------> k =', k)
+                    
+                    
+# Itt tartok 2023.05.16 10:30
+
+# Meg kellene futtatni a Test15 terhelésesel a Test15-ben tanított REST API végpontot
+# és megnézni, hogy viselkedik a jószág
+                    
+                    
+                    
+                    
 
 
 

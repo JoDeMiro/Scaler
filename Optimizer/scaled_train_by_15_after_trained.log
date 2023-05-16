@@ -1,1 +1,5 @@
 time,notification,actual_vm_number_was,actual_vm_number_is
+08:32:33,"Worker 192.168.0.73 added.",1,2
+08:32:43,"Worker 192.168.0.91 added.",2,3
+08:33:03,"Worker 192.168.0.73 removed.",3,2
+08:33:03,"Worker 192.168.0.91 removed.",2,1
