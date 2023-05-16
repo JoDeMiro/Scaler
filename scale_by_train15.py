@@ -721,7 +721,6 @@ def main():
                     # A tanításhoz használt skálázás
                     # Proba.: 0.1
 
-
 					k = 0
 					rnd = numpy.random.rand()
 					# if( rt > RT_LIMIT_UPPER ): # if response time is greater than the upper limit, consider scaling out
@@ -778,8 +777,17 @@ def main():
 					print('std     = {:.2f}'.format(stat['std']))
 					print('n       = {}'.format(stat['n']))
 
+# Ellenőrzés
+# Mi a faszom itt az rt?
+# Megynugodtam az avgrt és az rt ezen a ponton ugyan az
+					print(colored('---------------------------------------', 'red'))
+					print('    rt -----------> ', rt)
+					print(' avgrt -----------> ', avgrt)
+					print(colored('---------------------------------------', 'red'))
 					rt = avgrt 						# average Response Time for last interval
 					print('rt      = {:.2f}'.format(rt))
+
+
 
 					# print('---------------------------------------')
 					# print('         Write Log metric file         ')
@@ -836,6 +844,8 @@ def main():
                     #     ez azt jelenti, hogy a jelenlegi értékek alapján ilyen becslést adna RT-re a háló
                     #
                     #     olyan minthhta (a = 0) lenne
+                    #
+                    #     <-- ez a rész kiiktatható, kivehető, ha gyorsítani akarom, debug-ra jó --> 
 
 					predicted_labels = pred_rt(model, pred_features)
 					print(predicted_labels)
@@ -849,6 +859,10 @@ def main():
 					print(current_worker_number)
 					aps = get_advice(w = current_worker_number, train_features = pred_features, model = model, scale = 'OUT')
 					print(colored('---------------------------------------', 'cyan'))
+                    #
+                    # Na ez a fenti rész az (5) az ami bekerülhet a skálázáshoz
+                    #
+                    
 
 
 
