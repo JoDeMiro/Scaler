@@ -107,7 +107,7 @@ MAX_VM = 9
 print('---------------------------------------')
 print('                CONFIG                 ')
 RT_LIMIT_UPPER = 500
-RT_LIMIT_LOWER = 200
+RT_LIMIT_LOWER = 100
 # cpu_limit_upper = 70
 # cpu_limit_lower = 40
 print('---------------------------------------')
@@ -280,6 +280,9 @@ def chose_action(aps, scale):
 
 	chosen_delta_vm_out = 19
 	chosen_delta_vm_in  = -20
+
+	chosen_delta_vm_out = 0
+	chosen_delta_vm_in  = 0
     
 	chosen_delta_vm = None
 
@@ -878,9 +881,14 @@ def main():
 # és megnézni, hogy viselkedik a jószág
                     
                     
-                    
-                    
-
+# Itt tartok 2023.05.16 21:55
+#
+# Szar a kód.
+# Amikor leskáláz (kevés a vm) végig megy miden a kiszámításán akkor a végén azt szokita mondani hogy -20 VM
+#
+# A chose_action() metodus 'szar' rossz a logika hogy megírtam, hogy mi legyen a default érték,
+# ha nem talál megoldást.
+# Ezért ezt át kell nézni alaposan és minden forgatókönyvre megállapítani, hogy milyen értéket fog adni
 
 
 
