@@ -85,7 +85,7 @@ usr='ubuntu'
 # nonce='62c1d1d7-1c8a-152e-6b41-65bf544025c5'
 log_file='zulu.log'
 init_vm_number = 1
-trigger_count = 2
+trigger_count = 1
 
 metric_log_file_name = './Optimizer/metric_train_by_15_after_trained.log'
 scale_log_file_name =  './Optimizer/scaled_train_by_15_after_trained.log'
