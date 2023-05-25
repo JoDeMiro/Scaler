@@ -49,7 +49,7 @@ url = 'http://127.0.0.1/balancer-manager'
 r = requests.get(url)
 nonce = re.search(r'nonce=(.*?)">', r.text).group(1)
 
-metricWorker = '192.168.0.170'
+metricWorker = '192.168.0.6'
 
 VCPU = 1 # A metrika gépen a VCPU száma
 
