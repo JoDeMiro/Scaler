@@ -335,6 +335,3 @@ time,notification,actual_vm_number_was,actual_vm_number_is
 07:41:11,"Worker 192.168.0.243 added.",6,7
 07:41:28,"Worker 192.168.0.116 removed.",7,6
 07:41:28,"Worker 192.168.0.46 removed.",6,5
-08:19:38,"Worker 192.168.0.116 added.",5,6
-08:21:43,"Worker 192.168.0.116 removed.",6,5
-08:21:43,"Worker 192.168.0.219 removed.",5,4
