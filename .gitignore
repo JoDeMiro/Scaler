@@ -1,5 +1,8 @@
 Untitled.ipynb
 seq.csv
+Train/metric_train_by_none.log
+Train/scaled_train_by_none.log
+
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 __pycache__/
